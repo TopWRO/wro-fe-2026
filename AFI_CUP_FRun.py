@@ -3,9 +3,9 @@
 AFI CUP - CW / CCW Parking 外部运行流程 V01
 
 使用方法：
-1. AFI_CUP_V02.py 和本文件放在同一个文件夹。
+1. AFI_CUP_V05f.py 和本文件放在同一个文件夹。
 2. 平时主要修改本文件的 RUN PROGRAM 区域。
-3. AFI_CUP_V02.py 作为底层功能库，尽量不要频繁修改。
+3. AFI_CUP_V05f.py 作为底层功能库，尽量不要频繁修改。
 
 当前底层功能例如：
     car.gyro_run(...)                 # 纯 Gyro，不受 ToF 干扰
