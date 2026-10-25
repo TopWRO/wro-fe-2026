@@ -20,7 +20,7 @@
 - Pico 每 50 ms 输出一行：`degree=..,F=..,R1=..,R2=..,B=..,L2=..,L1=..,C1R=..,C1G=..,C1B=..,C1C=..`；ToF 单位 cm，`-1`=无有效读数，`-2`=已关闭；`degree=nan`=陀螺仪无数据。以 `#` 开头的是状态/错误信息。
 - 命令（一行一条）：`reset`（航向归零）、`F:40` / `Front:40` / `R1:0` 等（ToF 测量时间 ms，0=关闭，10..200）、`stats`（10 秒 ToF 刷新率统计）。
 - 默认每个 ToF 40 ms、轮流测量，所以每个 ToF 实际约 3 Hz 更新（输出 20 Hz 但数值会重复）。
-- 测试脚本：`python pico_hub_test.py`（监视并可输入命令）、`--test`（自动测试命令）、`--soft-reset`（重启 Pico 上的 main.py）。
+- 测试脚本：`python pico_hub_test.py`（先设置 ToF 测量时间再持续监视，运行中可输入命令；要改测量时间就改 `main()` 里 `set_tof_time(F=40, ...)` 这一行）、`--test`（自动测试命令）、`--soft-reset`（重启 Pico 上的 main.py）。
 | 电机 | DYNAMIXEL XL330-M288-T | 驱动/转向 |
 
 <!-- TODO：补充 Pi 与 Pico 的通信方式（USB 串口 / UART / I2C）、Pico 固件语言（MicroPython / C）、摄像头型号、各电机的 ID 和用途 -->
