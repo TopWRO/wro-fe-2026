@@ -346,7 +346,7 @@ def run_auto_test(skip_stats):
 # --------------------------------------------------------------------------
 
 def main():
-    set_tof_time(F=40, R1=40, R2=40, B=40, L2=40, L1=40)  # ToF measuring time per sensor in ms (10..200, 0 = off); remove a name to leave that sensor unchanged
+    #set_tof_time(F=40, R1=40, R2=40, B=40, L2=40, L1=40)  # ToF measuring time per sensor in ms (10..200, 0 = off); remove a name to leave that sensor unchanged
     read_pico_forever()  # keep receiving and printing data from the Pico; type a command + Enter to send it, Ctrl-C to stop
 
 
