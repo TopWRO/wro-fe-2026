@@ -13,9 +13,12 @@ style from ControlRCcarwithPSControler.py.
 N02 adds color-area detection while recording:
     --color {red,yellow,blue,green,black,white}   (default: red)
 Every frame, the pixels matching the chosen color are counted on the
-160x120 image (the same image saved to the Tub). The area (pixels) and the
-percentage of the frame are printed and stored in the Tub as
-"color/area" and "color/area_pct".
+160x120 camera image. The area (pixels) and the percentage of the frame are
+printed in the terminal and shown in a small live window (detected pixels
+outlined in magenta). Display only – nothing extra is saved to the Tub,
+so training data is exactly the same as N01.
+The window opens automatically when a display is available (monitor / VNC);
+use --no-window to turn it off.
 
 Example:
     python3 Recording_N02.py --recording --color green
@@ -69,10 +72,8 @@ TUB_INPUTS = [
     "user/angle",
     "user/throttle",
     "user/mode",
-    "color/area",
-    "color/area_pct",
 ]
-TUB_TYPES  = ["image_array", "float", "float", "str", "float", "float"]
+TUB_TYPES  = ["image_array", "float", "float", "str"]
 
 # ---------------------------------------------------------------------------
 # Color-area detection
@@ -94,6 +95,8 @@ COLOR_RANGES = {
 }
 
 COLOR_KERNEL = np.ones((3, 3), np.uint8)
+COLOR_WINDOW_SCALE = 2                 # 160x120 image shown at 320x240
+COLOR_OUTLINE_BGR  = (255, 0, 255)     # magenta: visible on all six colors
 
 # ---------------------------------------------------------------------------
 # PiCamera manual settings
@@ -296,7 +299,8 @@ class ColorAreaDetector:
     """Count the pixels of one color in the camera image.
 
     Input is the DonkeyCar camera image (RGB order).
-    Outputs: area in pixels, and area as % of the whole frame.
+    Outputs: area in pixels, area as % of the whole frame, and the mask
+    (for the display window only – not written to the Tub).
     """
 
     def __init__(self, color: str = DEFAULT_COLOR):
@@ -308,7 +312,7 @@ class ColorAreaDetector:
 
     def run(self, img):
         if img is None:
-            return 0.0, 0.0
+            return 0.0, 0.0, None
         hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
         mask = None
         for lo, hi in self.ranges:
@@ -318,7 +322,33 @@ class ColorAreaDetector:
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, COLOR_KERNEL)
         area = float(cv2.countNonZero(mask))
         pct = 100.0 * area / (mask.shape[0] * mask.shape[1])
-        return area, pct
+        return area, pct, mask
+
+
+class ColorAreaWindow:
+    """Small live window: camera image + detected-color outline + area text."""
+
+    def __init__(self, color: str = DEFAULT_COLOR):
+        self.color = color
+        self.title = f"Color area: {color}"
+        cv2.namedWindow(self.title, cv2.WINDOW_AUTOSIZE)
+
+    def run(self, img, mask, area: float, pct: float):
+        if img is None or mask is None:
+            return
+        view = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
+        cv2.drawContours(view, contours, -1, COLOR_OUTLINE_BGR, 1)
+        view = cv2.resize(view, None, fx=COLOR_WINDOW_SCALE, fy=COLOR_WINDOW_SCALE,
+                          interpolation=cv2.INTER_NEAREST)
+        text = f"{self.color}: {area:.0f} px ({pct:.1f}%)"
+        cv2.putText(view, text, (6, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 3)
+        cv2.putText(view, text, (6, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1)
+        cv2.imshow(self.title, view)
+        cv2.waitKey(1)
+
+    def shutdown(self):
+        cv2.destroyAllWindows()
 
 
 class ControlDisplay:
@@ -356,16 +386,25 @@ def add_camera(car: dk.vehicle.Vehicle):
 # ---------------------------------------------------------------------------
 # Vehicle builders
 # ---------------------------------------------------------------------------
-def build_vehicle_recording(color: str = DEFAULT_COLOR) -> dk.vehicle.Vehicle:
+def build_vehicle_recording(color: str = DEFAULT_COLOR,
+                            show_window: bool = True) -> dk.vehicle.Vehicle:
     car = dk.vehicle.Vehicle()
     add_camera(car)
 
     car.add(PS4Joystick(), outputs=["user/angle", "user/throttle", "user/mode"])
 
-    # Color area on the same 160x120 image that goes into the Tub.
+    # Color area on the 160x120 camera image – display only, NOT saved to the Tub.
     car.add(ColorAreaDetector(color), inputs=["cam/image_array"],
-            outputs=["color/area", "color/area_pct"])
+            outputs=["color/area", "color/area_pct", "color/mask"])
     print(f"Color detection: {color}")
+
+    if show_window and not os.environ.get("DISPLAY"):
+        print("No display found (DISPLAY not set) – color window disabled, terminal only.")
+        show_window = False
+    if show_window:
+        car.add(ColorAreaWindow(color),
+                inputs=["cam/image_array", "color/mask", "color/area", "color/area_pct"],
+                outputs=[])
 
     car.add(Lambda(lambda t: abs(t) > RECORD_THRESHOLD),
             inputs=["user/throttle"], outputs=["recording"])
@@ -441,10 +480,12 @@ if __name__ == "__main__":
     parser.add_argument("--model", default=MODEL_PATH_DEFAULT, help=".h5 model path for --driving mode")
     parser.add_argument("--color", default=DEFAULT_COLOR, choices=list(COLOR_RANGES.keys()),
                         help="Color to measure while recording (default: red)")
+    parser.add_argument("--no-window", action="store_true",
+                        help="Do not open the color-area window (terminal print only)")
     args = parser.parse_args()
 
     if args.recording:
-        vehicle = build_vehicle_recording(args.color)
+        vehicle = build_vehicle_recording(args.color, show_window=not args.no_window)
     else:
         mpath = Path(args.model).expanduser()
         if not mpath.is_file():
