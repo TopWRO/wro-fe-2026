@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Pi 5 side test for the Pico sensor hub (Pi Pico Scripts/main.py).
 
+EASY USE: edit the two lines in main() at the bottom, then run
+    python pico_hub_test.py
+While it runs you can also type a command + Enter (reset, F:100, stats ...).
+Ctrl-C to stop.
+
 The Pico prints one data line every 50 ms over USB serial:
     degree=..,F=..,R1=..,R2=..,B=..,L2=..,L1=..,C1R=..,C1G=..,C1B=..,C1C=..
 plus status lines starting with "#". ToF values are in cm; -1 = no valid
@@ -11,23 +16,23 @@ Commands the Pico accepts (one per line):
     F:40  Front:40  R1:0 ...   ToF timing budget in ms, 0 = off, 10..200
     stats                      10 s ToF update-rate report
 
-Usage:
-    python pico_hub_test.py                  # monitor; type commands + Enter
-    python pico_hub_test.py --send F:100     # send command(s), then monitor
+Other modes:
     python pico_hub_test.py --test           # automatic command test, PASS/FAIL
     python pico_hub_test.py --test --skip-stats
-    python pico_hub_test.py --soft-reset     # Ctrl-C + Ctrl-D: restart main.py
+    python pico_hub_test.py --soft-reset     # Ctrl-C + Ctrl-D: restart main.py first
 
 Nothing here drives a motor; it only talks to the Pico.
 """
 
-import argparse
 import math
 import select
 import sys
 import time
 
 import serial
+
+PORT = "/dev/ttyACM0"
+BAUD = 115200
 
 DATA_KEYS = ("degree", "F", "R1", "R2", "B", "L2", "L1",
              "C1R", "C1G", "C1B", "C1C")
@@ -37,7 +42,9 @@ TOF_KEYS = ("F", "R1", "R2", "B", "L2", "L1")
 class PicoLink:
     def __init__(self, port, baud):
         self.ser = serial.Serial(port, baud, timeout=0, exclusive=True)
+        self.ser.reset_input_buffer()  # drop old lines queued before we opened
         self.buffer = b""
+        self.skip_partial = True  # first line after opening may be cut off
 
     def send(self, text):
         self.ser.write(text.encode("utf-8") + b"\n")
@@ -49,6 +56,9 @@ class PicoLink:
             self.buffer += self.ser.read(waiting)
         parts = self.buffer.split(b"\n")
         self.buffer = parts.pop()  # keep the incomplete tail
+        if self.skip_partial and parts:
+            parts.pop(0)
+            self.skip_partial = False
         lines = []
         for raw in parts:
             line = raw.decode("utf-8", errors="replace").strip()
@@ -125,41 +135,74 @@ def print_line(line):
 
 
 # --------------------------------------------------------------------------
-# Monitor mode
+# Easy helpers used by main()
 # --------------------------------------------------------------------------
 
-def monitor(link, every):
+_link = None
+
+
+def pico():
+    """Open the Pico serial port once and reuse it."""
+    global _link
+    if _link is None:
+        try:
+            _link = PicoLink(PORT, BAUD)
+        except serial.SerialException as exc:
+            sys.exit("[PI] cannot open %s: %s (is another script using it?)" % (PORT, exc))
+        print("[PI] opened %s" % PORT)
+    return _link
+
+
+def set_tof_time(**budgets_ms):
+    """Send e.g. set_tof_time(F=100, R1=0) as "F:100" and "R1:0" to the Pico.
+
+    Names: F, R1, R2, B, L2, L1. Value in ms: 0 = off, or 10..200.
+    The Pico's "# OK ..." / "# ERR ..." replies show up in read_pico_forever().
+    """
+    for name, ms in budgets_ms.items():
+        pico().send("%s:%s" % (name, ms))
+
+
+def read_pico_forever(every=1):
+    """Print data from the Pico until Ctrl-C; typed commands are sent to it.
+
+    every=N prints only every Nth data line (1 = all, 20 lines/s).
+    """
+    link = pico()
     interactive = sys.stdin.isatty()
     if interactive:
         print("[PI] Monitoring. Type a command + Enter (e.g. reset, F:100, "
-              "F:blabla, stats). Ctrl-C to quit.")
+              "stats). Ctrl-C to quit.")
     count = 0
-    shown = 0
     window_start = time.time()
     window_count = 0
-    while True:
-        for line in link.read_lines():
-            data = parse_data(line)
-            if data is None:
-                print_line(line)
-                continue
-            count += 1
-            window_count += 1
-            if count % every == 0:
-                print(format_data(data))
-                shown += 1
+    try:
+        while True:
+            for line in link.read_lines():
+                data = parse_data(line)
+                if data is None:
+                    print_line(line)
+                    continue
+                count += 1
+                window_count += 1
+                if count % every == 0:
+                    print(format_data(data))
 
-        if interactive and select.select([sys.stdin], [], [], 0)[0]:
-            command = sys.stdin.readline().strip()
-            if command:
-                link.send(command)
+            if interactive and select.select([sys.stdin], [], [], 0)[0]:
+                command = sys.stdin.readline().strip()
+                if command:
+                    link.send(command)
 
-        now = time.time()
-        if now - window_start >= 5.0:
-            print("[PI] data rate %.1f lines/s" % (window_count / (now - window_start)))
-            window_start = now
-            window_count = 0
-        time.sleep(0.005)
+            now = time.time()
+            if now - window_start >= 5.0:
+                print("[PI] data rate %.1f lines/s" % (window_count / (now - window_start)))
+                window_start = now
+                window_count = 0
+            time.sleep(0.005)
+    except KeyboardInterrupt:
+        print("\n[PI] stopped")
+    finally:
+        link.close()
 
 
 # --------------------------------------------------------------------------
@@ -284,38 +327,13 @@ class Tester:
         return passed == len(self.results)
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Test the Pico sensor hub over USB serial.")
-    parser.add_argument("--port", default="/dev/ttyACM0")
-    parser.add_argument("--baud", type=int, default=115200)
-    parser.add_argument("--send", action="append", default=[], metavar="CMD",
-                        help="command to send before monitoring (repeatable), e.g. --send F:100")
-    parser.add_argument("--every", type=int, default=1,
-                        help="monitor: print every Nth data line (default 1 = all, 20 Hz)")
-    parser.add_argument("--test", action="store_true", help="run the automatic command test")
-    parser.add_argument("--skip-stats", action="store_true", help="test: skip the 10 s stats test")
-    parser.add_argument("--soft-reset", action="store_true",
-                        help="restart main.py on the Pico (Ctrl-C, Ctrl-D) before starting")
-    args = parser.parse_args()
-
+def run_auto_test(skip_stats):
+    link = pico()
+    ok = False
     try:
-        link = PicoLink(args.port, args.baud)
-    except serial.SerialException as exc:
-        sys.exit("[PI] cannot open %s: %s (is another script using it?)" % (args.port, exc))
-    print("[PI] opened %s" % args.port)
-
-    ok = True
-    try:
-        if args.soft_reset:
-            link.soft_reset()
-        for command in args.send:
-            link.send(command)
-        if args.test:
-            tester = Tester(link)
-            tester.run(args.skip_stats)
-            ok = tester.summary()
-        else:
-            monitor(link, max(1, args.every))
+        tester = Tester(link)
+        tester.run(skip_stats)
+        ok = tester.summary()
     except KeyboardInterrupt:
         print("\n[PI] stopped")
     finally:
@@ -323,5 +341,19 @@ def main():
     sys.exit(0 if ok else 1)
 
 
+# --------------------------------------------------------------------------
+# Edit these two lines to test
+# --------------------------------------------------------------------------
+
+def main():
+    set_tof_time(F=40, R1=40, R2=40, B=40, L2=40, L1=40)  # ToF measuring time per sensor in ms (10..200, 0 = off); remove a name to leave that sensor unchanged
+    read_pico_forever()  # keep receiving and printing data from the Pico; type a command + Enter to send it, Ctrl-C to stop
+
+
 if __name__ == "__main__":
-    main()
+    if "--soft-reset" in sys.argv:
+        pico().soft_reset()
+    if "--test" in sys.argv:
+        run_auto_test(skip_stats="--skip-stats" in sys.argv)
+    else:
+        main()
