@@ -13,17 +13,22 @@
 | 协处理器 | Raspberry Pi Pico 2 | 读取传感器，与 Pi 5 通信 |
 | 距离传感器 | 6 × ToF（前 F 为 VL53L4CX，R1/R2/B/L2/L1 为 VL53L4CD） | 接在 Pico 2 的 I2C1（GP2/GP3），XSHUT 分别为 GP20/21/18/19/16/17，地址 0x2A–0x2F |
 | 陀螺仪 | BNO085 | 接在 Pico 2 的 UART0（GP0/GP1，115200，RVC 帧），提供朝向/角度 |
-| 颜色传感器 | TODO: 确认型号（芯片 ID 0x44） | 接在 Pico 2 的 I2C0（GP4/GP5，地址 0x29），补光 LED 在 GP6 |
+| 颜色传感器 | TCS34725（芯片 ID 0x44；旧版固件注释亦写明） | 接在 Pico 2 的 I2C0（GP4/GP5，地址 0x29），补光 LED 在 GP6 |
+| 电机 | 2 × DYNAMIXEL XL330-M288-T，经 U2D2（`/dev/ttyUSB0`，57600，Protocol 2.0） | ID 1 = 驱动（Velocity 模式，电机 1 圈 → 车轮 3 圈）；ID 2 = 转向（Position 模式，中位 2016，±40°） |
+| 人机界面 | Sense HAT | 摇杆确认 CW/CCW、LED 状态（比赛程序仍在使用） |
 
 ## Pi 5 ↔ Pico 通信
-- Pico 运行 `Pi Pico Scripts/main.py`（需要同目录的 `sensor_hub_tof.py` 和 ToF 驱动），USB 串口 `/dev/ttyACM0`，115200。
+- Pico 固件为 MicroPython，运行 `Pi Pico Scripts/main.py`（需要同目录的 `sensor_hub_tof.py` 和 ToF 驱动；`vl53l4cd_patch (1).py` 在 Pico 上必须叫 `vl53l4cd_patch.py`），USB 串口 `/dev/ttyACM0`，115200。
 - Pico 每 50 ms 输出一行：`degree=..,F=..,R1=..,R2=..,B=..,L2=..,L1=..,C1R=..,C1G=..,C1B=..,C1C=..`；ToF 单位 cm，`-1`=无有效读数，`-2`=已关闭；`degree=nan`=陀螺仪无数据。以 `#` 开头的是状态/错误信息。
 - 命令（一行一条）：`reset`（航向归零）、`F:40` / `Front:40` / `R1:0` 等（ToF 测量时间 ms，0=关闭，10..200）、`stats`（10 秒 ToF 刷新率统计）。
 - 默认每个 ToF 40 ms、轮流测量，所以每个 ToF 实际约 3 Hz 更新（输出 20 Hz 但数值会重复）。
 - 测试脚本：`python pico_hub_test.py`（先设置 ToF 测量时间再持续监视，运行中可输入命令；要改测量时间就改 `main()` 里 `set_tof_time(F=40, ...)` 这一行）、`--test`（自动测试命令）、`--soft-reset`（重启 Pico 上的 main.py）。
-| 电机 | DYNAMIXEL XL330-M288-T | 驱动/转向 |
+- ⚠️ 协议不兼容（未修复）：比赛库 `AFI_CUP_V05*.py` 的 `_read_latest_serial_frame()` 只接受旧的 7 字段无标签 CSV（`gyro,F,R1,R2,B,L2,L1`），并发送 `reset gyro`；当前固件发 11 字段带标签行、只接受 `reset`。需要的适配见文档仓库 `docs/software.md` §2.3。
 
-<!-- TODO：补充 Pi 与 Pico 的通信方式（USB 串口 / UART / I2C）、Pico 固件语言（MicroPython / C）、摄像头型号、各电机的 ID 和用途 -->
+## 文档仓库
+- 2026 开源文档仓库在 Mac 本地 `~/Top_WRO-2026-documentation`（计划 GitHub：`TopWRO/Top_WRO-2026-documentation`）。代码是从本仓库原样复制并只加了英文注释；改了这里的比赛代码后，文档仓库的 `src/` 也要同步。
+
+<!-- TODO：补充摄像头型号 -->
 
 ## 运行环境
 - 系统：Raspberry Pi OS 64 位，资源有限（CPU、内存、SD 卡速度都不高），写代码时注意性能，避免不必要的大依赖。
