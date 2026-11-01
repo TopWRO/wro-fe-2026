@@ -570,7 +570,8 @@ class UnifiedRobotIO:
                 continue  # 损坏或不完整的行，避免错位解析
 
             if math.isfinite(degree):
-                angle = -degree
+                # 当前固件已是 CW 为正、CCW 为负，与比赛流程的目标角度约定一致，不再取反。
+                angle = degree
                 if angle >= 0:
                     angle *= gyro_offset_cw
                 else:
