@@ -83,6 +83,10 @@ def set_gyro_heading_offset(value):
 
 SERIAL_PORT          = "/dev/ttyACM0"
 SERIAL_BAUD          = 115200
+# Pico 输出行中的字段名（顺序对应 front, R1, R2, back, L2, L1）
+PICO_TOF_KEYS        = ("F", "R1", "R2", "B", "L2", "L1")
+PICO_COLOR_KEYS      = ("C1R", "C1G", "C1B", "C1C")
+PICO_RESET_ACK_TIMEOUT_SEC = 1.0
 
 # 统一 I/O 线程频率：Pico 串口 + Steering + Throttle + 轮子位置
 IO_LOOP_HZ           = 20.0
@@ -410,7 +414,7 @@ def center_crop(img, tw=CROP_W, th=CROP_H):
 class UnifiedRobotIO:
     """
     单一 I/O 线程，统一管理：
-      1) Pico USB Serial：只保留最新完整 7 字段帧
+      1) Pico USB Serial：只保留最新完整带标签帧（degree=..,F=..,...）
       2) DXL ID2 Steering：Position Mode
       3) DXL ID1 Throttle：Velocity Mode
       4) DXL ID1 Present Position：累计 wheel_degrees
@@ -443,9 +447,15 @@ class UnifiedRobotIO:
             "back": 999.0,
             "L2": 999.0,
             "L1": 999.0,
+            "C1R": -1,
+            "C1G": -1,
+            "C1B": -1,
+            "C1C": -1,
             "frame_seq": 0,
         }
         self._sensor_seq = 0
+        # 发送 reset 后，在收到 Pico 的 "# OK reset" 之前丢弃数据帧，避免读到归零前的旧角度。
+        self._reset_ack_deadline = None
 
         # 只保存一个最新目标值，不使用命令队列，不存在旧命令积压。
         self.target_steering = 0.0
@@ -498,12 +508,14 @@ class UnifiedRobotIO:
         if not self.gyro_reset_event.is_set():
             return
         try:
-            self.ser.write(b"reset gyro\n")
+            # 开头的换行先结束 Pico 行缓存里可能残留的半条命令，空行会被 Pico 忽略。
+            self.ser.write(b"\nreset\n")
             self.ser.flush()
             self.ser.reset_input_buffer()
             self._serial_rx_buffer = b""
+            self._reset_ack_deadline = time.monotonic() + PICO_RESET_ACK_TIMEOUT_SEC
             set_gyro_heading_offset(0.0)
-            print("[UnifiedIO] reset gyro; software heading offset cleared to 0.0°")
+            print("[UnifiedIO] reset sent; software heading offset cleared to 0.0°")
         except Exception as e:
             print("[UnifiedIO] reset gyro failed:", e)
         finally:
@@ -512,8 +524,11 @@ class UnifiedRobotIO:
     def _read_latest_serial_frame(self):
         """
         非阻塞读出当前所有可用字节。
-        仅解析以换行结束的完整帧；如果一次读到多帧，只应用最后一个合法 7 字段帧。
-        正式格式固定：gyro, front, R1, R2, back, L2, L1
+        仅解析以换行结束的完整帧；如果一次读到多帧，只应用最后一个合法帧。
+        Pico 格式：degree=..,F=..,R1=..,R2=..,B=..,L2=..,L1=..,C1R=..,C1G=..,C1B=..,C1C=..
+        ToF：-1 = 无有效读数，-2 = 已关闭，两者都统一成 -1（下游只检查 != -1）。
+        degree=nan：陀螺仪无数据，angle_valid=False，angle 保留上一个有效值。
+        以 # 开头的是 Pico 状态/错误信息，直接打印。
         """
         try:
             chunk = self.ser.read_all()
@@ -530,38 +545,59 @@ class UnifiedRobotIO:
 
         latest_valid = None
         for raw_line in parts[:-1]:
-            line = raw_line.strip()
+            line = raw_line.decode("utf-8", errors="ignore").strip()
             if not line:
                 continue
+
+            if line.startswith("#"):
+                print("[Pico]", line)
+                if line.startswith("# OK reset"):
+                    self._reset_ack_deadline = None
+                continue
+
+            if self._reset_ack_deadline is not None:
+                if time.monotonic() < self._reset_ack_deadline:
+                    continue  # 归零确认前的帧可能还是旧角度
+                print("[UnifiedIO] WARNING: no '# OK reset' from Pico; gyro may not be zeroed")
+                self._reset_ack_deadline = None
+
             try:
-                nums = [float(x.strip()) for x in line.decode("utf-8", errors="ignore").split(",")]
-            except Exception:
-                continue
+                fields = dict(item.split("=", 1) for item in line.split(","))
+                degree = float(fields["degree"])
+                tof = [float(fields[key]) for key in PICO_TOF_KEYS]
+                color = [int(fields.get(key, -1)) for key in PICO_COLOR_KEYS]
+            except (ValueError, KeyError):
+                continue  # 损坏或不完整的行，避免错位解析
 
-            # 比赛正式版只接受完整 7 字段帧，避免损坏的 6 字段被错位解析。
-            if len(nums) != 7:
-                continue
+            if math.isfinite(degree):
+                angle = -degree
+                if angle >= 0:
+                    angle *= gyro_offset_cw
+                else:
+                    angle *= gyro_offset_ccw
 
-            angle = -nums[0]
-            if angle >= 0:
-                angle *= gyro_offset_cw
+                # 软件层全局航向校正：后续所有 gyro_run / gyro_turn / ai_run
+                # 读取到的 angle 都已经是“原始修正角 + 全局 offset”。
+                angle += get_gyro_heading_offset()
+                angle_valid = True
             else:
-                angle *= gyro_offset_ccw
+                with self.sensor_lock:
+                    angle = self.latest_data["angle"]
+                angle_valid = False
 
-            # 软件层全局航向校正：后续所有 gyro_run / gyro_turn / ai_run
-            # 读取到的 angle 都已经是“原始修正角 + 全局 offset”。
-            angle += get_gyro_heading_offset()
+            tof = [v if v >= 0 else -1.0 for v in tof]
 
             latest_valid = {
                 "angle": angle,
-                "angle_valid": True,
-                "front": nums[1],
-                "R1": nums[2],
-                "R2": nums[3],
-                "back": nums[4],
-                "L2": nums[5],
-                "L1": nums[6],
+                "angle_valid": angle_valid,
+                "front": tof[0],
+                "R1": tof[1],
+                "R2": tof[2],
+                "back": tof[3],
+                "L2": tof[4],
+                "L1": tof[5],
             }
+            latest_valid.update(zip(PICO_COLOR_KEYS, color))
 
         if latest_valid is not None:
             with self.sensor_lock:
@@ -769,8 +805,7 @@ class CarController:
 
         # 保存最近一次串口数据
         self.last_data = {
-            # 新串口六颗ToF顺序：front, R1, R2, back, L2, L1
-            # 若固件仍额外在最前方输出gyro，则也兼容7字段格式。
+            # 六颗ToF：front, R1, R2, back, L2, L1（由 UnifiedIO 从 Pico 带标签帧解析）
             "angle": 0.0,
             "angle_valid": False,
             "front": 999.0,
