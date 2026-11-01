@@ -8,6 +8,8 @@
 依赖：OpenCV、NumPy，与 line_color_detect.py 相同。
 HSV 默认阈值仅为起点，需要按实际灯光调整。
 实时窗口：左键拖框取色；c=取色模式，r=检测区域模式，f=全图检测，o=恢复橙色。
+每次取色后统计首次匹配耗时和检测次数；测量到算法完成，不包含远程画面传输。
+画面显示取图、处理和上一完整循环的秒数与 Hz；取图 Hz 是调用速率，不是传感器帧率。
 """
 
 import argparse
@@ -18,6 +20,30 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+
+
+def duration_metrics(seconds):
+    """秒数及其倒数（Hz）；不可测的零时长不报告无限频率。"""
+    return {"seconds": round(seconds, 9),
+            "hz": round(1.0 / seconds, 3) if seconds > 0 else None}
+
+
+def draw_performance(image, performance):
+    """叠加性能数据，秒和 Hz 并列；完整循环只能在下一帧显示。"""
+    for y, label, key in ((88, "Get(call)", "capture"),
+                          (104, "Process", "processing"),
+                          (120, "Loop(prev)", "previous_loop")):
+        measured = performance[key]
+        if measured is None:
+            text = f"{label}: waiting..."
+        else:
+            hz_text = f"{measured['hz']:.1f} Hz" if measured["hz"] is not None else "-- Hz"
+            text = f"{label}: {measured['seconds']:.6f} s | {hz_text}"
+        # 相同字重的黑色阴影兼容不同 OpenCV 版本的文字间距。
+        cv2.putText(image, text, (5, y + 1), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
+                    (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(image, text, (4, y), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
+                    (255, 255, 255), 1, cv2.LINE_AA)
 
 
 def sample_color_ranges(bgr_patch):
@@ -50,6 +76,42 @@ def sample_color_ranges(bgr_patch):
             ((low, s0, v0), (179, s1, v1))]
 
 
+class DetectionTiming:
+    """每次取色单独计时；只数松开鼠标后的实际检测调用，不数打印行数。"""
+
+    def __init__(self, sample_id, pressed_at, released_at, ready_at):
+        self.sample_id = sample_id
+        self.pressed_at = pressed_at
+        self.released_at = released_at
+        self.ready_at = ready_at
+        self.runs = 0
+        self.first_match = None
+
+    def record(self, has_target, finished_at):
+        self.runs += 1
+        if has_target and self.first_match is None:
+            self.first_match = {
+                "runs_to_first_match": self.runs,
+                "press_to_first_match_ms": round(1000 * (finished_at - self.pressed_at), 3),
+                "release_to_first_match_ms": round(1000 * (finished_at - self.released_at), 3),
+            }
+            return True
+        return False
+
+    def report(self):
+        result = {"sample_id": self.sample_id,
+                  "state": "matched" if self.first_match is not None else "waiting",
+                  "drag_ms": round(1000 * (self.released_at - self.pressed_at), 3),
+                  "sampling_ms": round(1000 * (self.ready_at - self.released_at), 3),
+                  "runs_since_sample": self.runs,
+                  "runs_to_first_match": None,
+                  "press_to_first_match_ms": None,
+                  "release_to_first_match_ms": None}
+        if self.first_match is not None:
+            result.update(self.first_match)
+        return result
+
+
 class MouseSelection:
     """鼠标坐标映射回原图；取样使用按下时的原始画面，避免拖动期间变化。"""
 
@@ -62,6 +124,9 @@ class MouseSelection:
         self.frame = None
         self.display_size = None
         self.start = self.end = self.frozen = None
+        self.pressed_at = None
+        self.sample_id = 0
+        self.timing = None
         self.message = "Drag inside a solid color to sample"
 
     def bounds(self):
@@ -77,15 +142,18 @@ class MouseSelection:
         point = (min(w - 1, max(0, int(x * w / dw))),
                  min(h - 1, max(0, int(y * h / dh))))
         if event == cv2.EVENT_LBUTTONDOWN:
+            self.pressed_at = time.perf_counter()
             self.start = self.end = point
             self.frozen = self.frame.copy()
         elif event == cv2.EVENT_MOUSEMOVE and self.start is not None:
             self.end = point
         elif event == cv2.EVENT_LBUTTONUP and self.start is not None:
+            released_at = time.perf_counter()
             self.end = point
             x0, y0, x1, y1 = self.bounds()
             if self.mode == "roi":
                 self.roi = (x0, y0, x1, y1)
+                self.timing = None  # 检测范围已改变，旧的首次匹配测量失效。
                 self.message = f"ROI: ({x0}, {y0}) - ({x1 - 1}, {y1 - 1})"
             else:
                 # 单击时采样周围 5x5 像素，拖动时使用整个矩形。
@@ -93,23 +161,30 @@ class MouseSelection:
                     x0, x1 = max(0, x0 - 2), min(w, x1 + 2)
                     y0, y1 = max(0, y0 - 2), min(h, y1 + 2)
                 self.ranges = sample_color_ranges(self.frozen[y0:y1, x0:x1])
+                self.sample_id += 1
+                self.timing = DetectionTiming(self.sample_id, self.pressed_at,
+                                               released_at, time.perf_counter())
                 self.color_name = "Sampled"
                 self.message = "Color sampled; drag again to replace"
-                print(f"[Sample] HSV ranges: {self.ranges}", flush=True)
+                print(f"[Sample] id={self.sample_id} HSV ranges: {self.ranges}", flush=True)
             self.start = self.end = self.frozen = None
+            self.pressed_at = None
 
     def key(self, key):
         if key in (ord("c"), ord("r"), ord("f"), ord("o"), 27):
             self.start = self.end = self.frozen = None
+            self.pressed_at = None
         if key in (ord("c"), ord("r")):
             self.mode = "color" if key == ord("c") else "roi"
             self.message = ("Drag inside a solid color to sample" if self.mode == "color"
                             else "Drag to restrict detection to a rectangle")
         elif key == ord("f"):
             self.roi = None
+            self.timing = None
             self.message = "Detection: full frame"
         elif key == ord("o"):
             self.ranges = self.default_ranges
+            self.timing = None
             self.color_name = "Orange"
             self.message = "Default orange restored"
 
@@ -139,14 +214,14 @@ def analyze_orange(bgr, lower=(5, 100, 80), upper=(25, 255, 255), min_area=50,
     keep = np.zeros(count, dtype=np.uint8)
     annotated = bgr.copy()
     for label in range(1, count):
-        x, y, width, height, area = map(int, stats[label])
+        x, y, blob_width, blob_height, area = map(int, stats[label])
         if area < min_area:
             continue
         keep[label] = 255
         center = [round(float(v), 2) for v in centers[label]]
-        regions.append({"area_pixels": area, "bbox": [x, y, width, height],
+        regions.append({"area_pixels": area, "bbox": [x, y, blob_width, blob_height],
                         "center": center})
-        cv2.rectangle(annotated, (x, y), (x + width - 1, y + height - 1),
+        cv2.rectangle(annotated, (x, y), (x + blob_width - 1, y + blob_height - 1),
                       (0, 255, 0), 1)
         cv2.putText(annotated, str(area), (x, max(12, y - 4)),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
@@ -181,6 +256,8 @@ def preview_camera(args):
 
     cam = init_camera()
     frames, fps = 0, 0.0
+    detection_runs_total = 0
+    previous_loop = None
     fps_start = time.monotonic()
     last_report = fps_start - 1.0
     selection = MouseSelection(args.lower, args.upper)
@@ -191,15 +268,40 @@ def preview_camera(args):
             cv2.namedWindow("orange camera", cv2.WINDOW_AUTOSIZE)
             cv2.setMouseCallback("orange camera", selection.on_mouse)
         while True:
+            loop_start = time.perf_counter()
             rgb = cam.run()
+            capture_finished = time.perf_counter()
             if rgb is None:
                 time.sleep(0.01)
                 continue
+            # 处理计时包含 RGB 转换、颜色检测和基本目标标注，排除取图及窗口显示。
+            analysis_start = capture_finished
             live_bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
             # 拖框时冻结取样画面；松开后立即恢复实时检测。
             bgr = selection.frozen if selection.frozen is not None else live_bgr
             result, mask, annotated = analyze_orange(
                 bgr, args.lower, args.upper, args.min_area, selection.ranges, selection.roi)
+            analysis_finished = time.perf_counter()
+            detection_runs_total += 1
+            result["analysis_ms"] = round(1000 * (analysis_finished - analysis_start), 3)
+            result["performance"] = {
+                "capture": duration_metrics(capture_finished - loop_start),
+                "processing": duration_metrics(analysis_finished - analysis_start),
+                "previous_loop": previous_loop,
+                "frame_frozen": selection.frozen is not None,
+            }
+            result["detection_runs_total"] = detection_runs_total
+            if selection.timing is not None and selection.frozen is None:
+                first_match = selection.timing.record(result["target_center"] is not None,
+                                                       analysis_finished)
+                if first_match:
+                    measured = selection.timing.report()
+                    # 首次匹配立刻打印，避免受到每 0.5 秒输出统计的节流影响。
+                    print(f"[Detection] sample={measured['sample_id']} "
+                          f"press_to_match={measured['press_to_first_match_ms']:.3f} ms "
+                          f"release_to_match={measured['release_to_first_match_ms']:.3f} ms "
+                          f"runs={measured['runs_to_first_match']}", flush=True)
+            result["sample_timing"] = selection.timing.report() if selection.timing else None
             result["color"] = selection.color_name
             frames += 1
             now = time.monotonic()
@@ -209,10 +311,25 @@ def preview_camera(args):
             if now - last_report >= 0.5:
                 print(json.dumps(result, ensure_ascii=False), flush=True)
                 last_report = now
+            quit_requested = False
             if not args.no_show:
                 cv2.putText(annotated,
-                            f"{selection.color_name} {result['matched_percent']:.1f}%  FPS {fps:.1f}",
+                            f"{selection.color_name} {result['matched_percent']:.1f}%  Avg {fps:.1f} Hz",
                             (4, 18), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
+                timing = result["sample_timing"]
+                if timing is not None:
+                    if timing["state"] == "matched":
+                        text = (f"Release->match: {timing['release_to_first_match_ms'] / 1000:.6f} s"
+                                f" | {timing['runs_to_first_match']} runs")
+                        press_text = f"Press->match: {timing['press_to_first_match_ms'] / 1000:.6f} s"
+                    else:
+                        text = f"Waiting for match | {timing['runs_since_sample']} runs"
+                        press_text = ""
+                    cv2.putText(annotated, text, (4, 54),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
+                    cv2.putText(annotated, press_text, (4, 70),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1)
+                draw_performance(annotated, result["performance"])
                 if selection.roi is not None:
                     x0, y0, x1, y1 = selection.roi
                     cv2.rectangle(annotated, (x0, y0), (x1 - 1, y1 - 1), (255, 255, 0), 1)
@@ -236,9 +353,13 @@ def preview_camera(args):
                                            interpolation=cv2.INTER_NEAREST)
                     cv2.imshow(title, frame)
                 key = cv2.waitKey(1) & 0xFF
-                if key == ord("q"):
-                    break
+                quit_requested = key == ord("q")
                 selection.key(key)
+            # 包含取图、处理、日志输出、窗口提交和鼠标/键盘事件处理。
+            # 本轮窗口已经提交，因此将结果留到下一帧叠加，避免漏掉显示开销。
+            previous_loop = duration_metrics(time.perf_counter() - loop_start)
+            if quit_requested:
+                break
     except KeyboardInterrupt:
         print("\n[Orange] stopped")
     finally:
