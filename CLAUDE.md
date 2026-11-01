@@ -23,7 +23,7 @@
 - 命令（一行一条）：`reset`（航向归零）、`F:40` / `Front:40` / `R1:0` 等（ToF 测量时间 ms，0=关闭，10..200）、`stats`（10 秒 ToF 刷新率统计）。
 - 默认每个 ToF 40 ms、轮流测量，所以每个 ToF 实际约 3 Hz 更新（输出 20 Hz 但数值会重复）。
 - 测试脚本：`python pico_hub_test.py`（先设置 ToF 测量时间再持续监视，运行中可输入命令；要改测量时间就改 `main()` 里 `set_tof_time(F=40, ...)` 这一行）、`--test`（自动测试命令）、`--soft-reset`（重启 Pico 上的 main.py）。
-- 比赛库 `AFI_CUP_V05.py`（障碍赛）/ `AFI_CUP_V05f.py`（开放赛）的 `UnifiedRobotIO` 已适配当前固件：按字段名解析；ToF 的 -1/-2 统一成 -1（下游代码只判断 `!= -1`）；`degree=nan` → `angle_valid=False` 并保留上次角度；角度仍取反（`angle = -degree`，与旧固件一致）；颜色存为 `C1R/C1G/C1B/C1C`；发送 `\nreset\n` 后丢弃数据帧，直到收到 `# OK reset`（1 秒超时并警告）。
+- 比赛库 `AFI_CUP_V05.py`（障碍赛）/ `AFI_CUP_V05f.py`（开放赛）的 `UnifiedRobotIO` 已适配当前固件：按字段名解析；ToF 的 -1/-2 统一成 -1（下游代码只判断 `!= -1`）；`degree=nan` → `angle_valid=False` 并保留上次角度；角度不取反（`angle = degree`；当前固件 CW 为正、CCW 为负，与比赛流程目标角度一致；旧代码的取反会导致 CW 时 `ai_run` 永远到不了停止角度）；颜色存为 `C1R/C1G/C1B/C1C`；发送 `\nreset\n` 后丢弃数据帧，直到收到 `# OK reset`（1 秒超时并警告）。
 
 ## 文档仓库
 - 2026 开源文档仓库在 Mac 本地 `~/Top_WRO-2026-documentation`（计划 GitHub：`TopWRO/Top_WRO-2026-documentation`）。代码是从本仓库原样复制并只加了英文注释；改了这里的比赛代码后，文档仓库的 `src/` 也要同步。
