@@ -44,8 +44,8 @@ CAPTURE_W, CAPTURE_H = (320, 240)
 CROP_W, CROP_H       = (160, 120)
 
 
-MODEL_PATH_CCW       = str(Path("~/Top WRO FE 2026/Models/occw10mypilot.h5").expanduser())
-MODEL_PATH_CW        = str(Path("~/Top WRO FE 2026/Models/ocw11mypilot.h5").expanduser())
+MODEL_PATH_CCW       = str(Path("~/PR_Models/Occwopt.h5").expanduser())
+MODEL_PATH_CW        = str(Path("~/PR_Models/allOcwmypilot.h5").expanduser())
 Run_Clockwise        = "CCW"
 MODEL_PATH_DEFAULT   = MODEL_PATH_CCW
 AI_LOOP_HZ           = 15.0

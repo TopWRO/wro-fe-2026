@@ -2865,7 +2865,7 @@ def detect_run_clockwise(io, sense, sample_count=5):
 
     io.request_gyro_reset()
     print("[UnifiedIO] gyro reset requested before direction detect")
-    time.sleep(4)
+    time.sleep(0.5)
 
     while True:
         now = time.time()

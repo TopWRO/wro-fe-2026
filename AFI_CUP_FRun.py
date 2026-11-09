@@ -100,7 +100,7 @@ def run_program(car, sense, run_clockwise):
     """
 
     car.reset_gyro()
-    time.sleep(4)
+    time.sleep(0.5)
 
     if run_clockwise == "CCW":
 

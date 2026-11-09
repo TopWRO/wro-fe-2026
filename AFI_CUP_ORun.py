@@ -100,27 +100,28 @@ def run_program(car, sense, run_clockwise):
     """
 
     car.reset_gyro()
-    time.sleep(4)
+    time.sleep(0.15)
 
     if run_clockwise == "CCW":
-        car.gyro_turn(steer_cmd=-1,speed=0.15, target_angle_deg= -40,max_time=20.0)
-        
-        car.gyro_run(
-            target_angle_deg=-40,
-            speed=0.15,
-            run_time=2,
-            run_distance=3000
-        )
-        
-        
-        car.gyro_turn(steer_cmd=1,speed=0.15, target_angle_deg= -20,max_time=20.0)
-        car.gyro_run(
-            target_angle_deg=5,
-            speed=-0.3,
-            run_time=4,
-            run_distance=3000
-        )
-        car.ai_run(stop_delta_deg = -1080)
+#         car.gyro_turn(steer_cmd=-1,speed=0.15, target_angle_deg= -40,max_time=20.0)
+#         
+#         car.gyro_run(
+#             target_angle_deg=-40,
+#             speed=0.15,
+#             run_time=0.5,
+#             run_distance=3000
+#         )
+#         
+#         
+#         car.gyro_turn(steer_cmd=1,speed=0.15, target_angle_deg= -20,max_time=20.0)
+#         car.gyro_run(
+#             target_angle_deg=5,
+#             speed=-0.3,
+#             run_time=4,
+#             run_distance=3000
+#         )
+#         car.ai_run(stop_delta_deg = -1055)
+        time.sleep(30)
         
         
         car.gyro_run_tof(
@@ -148,7 +149,7 @@ def run_program(car, sense, run_clockwise):
             max_time=20.0
         )
         
-        car.calibrate_gyro_from_side_wall(wall_angle_deg = -1170)
+        #car.calibrate_gyro_from_side_wall(wall_angle_deg = -1170)
 
         car.gyro_run_tof(
             target_angle_deg=(-1080-90),
@@ -161,7 +162,7 @@ def run_program(car, sense, run_clockwise):
         car.gyro_run(
             target_angle_deg=-1170,
             speed=0.15,
-            run_time=2,
+            run_time=1,
             run_distance=500
         )
         
@@ -169,14 +170,14 @@ def run_program(car, sense, run_clockwise):
         car.gyro_turn(
             steer_cmd=1,
             speed=0.15,
-            target_angle_deg= (-1080-15),
+            target_angle_deg= (-1080+17),
             max_time=20.0
         )
         
         
 
         
-        car.calibrate_gyro_from_side_wall(wall_angle_deg = -1080)
+        #car.calibrate_gyro_from_side_wall(wall_angle_deg = -1080)
 
         
         print("[RUN] CCW Parking Program: RIGHT wall")
