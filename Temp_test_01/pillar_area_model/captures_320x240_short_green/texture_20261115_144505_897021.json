@@ -1,0 +1,170 @@
+{
+  "source": null,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 4
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 2,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5
+  },
+  "image_width": 320,
+  "image_height": 240,
+  "program_version": "area_model_320x240_capture",
+  "model_status": "Original 640x480-trained normalized-area model; new 320x240 data not yet fitted",
+  "model": "102-photo area/rotated-box-ratio RBF; 36 support vectors",
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        252,
+        216,
+        39,
+        24
+      ],
+      "shape_bbox_xywh": [
+        252,
+        216,
+        39,
+        24
+      ],
+      "shape_from_strong_core": false,
+      "axis_width_px": 39,
+      "axis_height_px": 24,
+      "axis_w_over_h": 1.625,
+      "oriented_width_px": 38.0,
+      "oriented_height_px": 23.0,
+      "oriented_w_over_h": 1.6521739130434783,
+      "oriented_h_over_w": 0.6052631578947368,
+      "contour_area_px": 731.5,
+      "rectangle_fill": 0.8369565217391305,
+      "polygon_vertices": 6,
+      "outline": "POLYGON-6",
+      "touches_image_border": true,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          252,
+          216
+        ],
+        [
+          277,
+          216
+        ],
+        [
+          290,
+          234
+        ],
+        [
+          258,
+          239
+        ]
+      ],
+      "edge_top_width_px": 25.0,
+      "edge_bottom_width_px": 32.38827133178711,
+      "edge_left_height_px": 23.76972770690918,
+      "edge_right_height_px": 22.203603744506836,
+      "average_width_px": 28.694135665893555,
+      "average_height_px": 22.986665725708008,
+      "average_w_over_h": 1.2482948161464924,
+      "average_h_over_w": 0.80109280841766,
+      "quad_fit_fraction": 0.8122912491649966,
+      "model_area_pixels": 784,
+      "model_area_fraction": 0.010208333333333333,
+      "model_label": "stand",
+      "model_margin": 0.0005995005154857804,
+      "model_outside_training_range": true,
+      "classification_ratio": 1.6521739130434783,
+      "decision_reason": "model_margin_low_hold_previous",
+      "partial_view": true,
+      "decision": "SHORT-TEXTURE",
+      "changed_pixels": 782,
+      "raw_decision": "UNKNOWN-KEEP",
+      "track_id": 1,
+      "filtered_ratio": 1.034844770673178,
+      "pending_votes": 0,
+      "decision_held": true
+    },
+    {
+      "id": 2,
+      "bbox_xywh": [
+        296,
+        110,
+        24,
+        36
+      ],
+      "shape_bbox_xywh": [
+        296,
+        110,
+        24,
+        36
+      ],
+      "shape_from_strong_core": false,
+      "axis_width_px": 24,
+      "axis_height_px": 36,
+      "axis_w_over_h": 0.6666666666666666,
+      "oriented_width_px": 6.824096202850342,
+      "oriented_height_px": 41.85758590698242,
+      "oriented_w_over_h": 0.16303128943019116,
+      "oriented_h_over_w": 6.133791884337595,
+      "contour_area_px": 189.0,
+      "rectangle_fill": 0.6616715875416999,
+      "polygon_vertices": 5,
+      "outline": "POLYGON-5",
+      "touches_image_border": true,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          296,
+          114
+        ],
+        [
+          300,
+          111
+        ],
+        [
+          319,
+          135
+        ],
+        [
+          319,
+          145
+        ]
+      ],
+      "edge_top_width_px": 5.0,
+      "edge_bottom_width_px": 10.0,
+      "edge_left_height_px": 38.60051727294922,
+      "edge_right_height_px": 30.610456466674805,
+      "average_width_px": 7.5,
+      "average_height_px": 34.60548686981201,
+      "average_w_over_h": 0.21672863694175046,
+      "average_h_over_w": 4.614064915974935,
+      "quad_fit_fraction": 0.8568232662192393,
+      "model_area_pixels": 228,
+      "model_area_fraction": 0.00296875,
+      "model_label": "tall",
+      "model_margin": 0.6085126603359203,
+      "model_outside_training_range": true,
+      "classification_ratio": 0.16303128943019116,
+      "decision_reason": "learned_area_and_box_ratio",
+      "partial_view": true,
+      "decision": "TALL-TEXTURE",
+      "changed_pixels": 226,
+      "raw_decision": "TALL-TEXTURE",
+      "track_id": 3,
+      "filtered_ratio": 0.16303128943019116,
+      "pending_votes": 0,
+      "decision_held": false
+    }
+  ]
+}

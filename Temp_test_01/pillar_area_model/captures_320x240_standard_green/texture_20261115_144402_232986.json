@@ -1,0 +1,27 @@
+{
+  "source": null,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 4
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 2,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5
+  },
+  "image_width": 320,
+  "image_height": 240,
+  "program_version": "area_model_320x240_capture",
+  "model_status": "Original 640x480-trained normalized-area model; new 320x240 data not yet fitted",
+  "model": "102-photo area/rotated-box-ratio RBF; 36 support vectors",
+  "targets": []
+}
