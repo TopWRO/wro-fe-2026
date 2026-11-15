@@ -254,6 +254,34 @@ class ProcessorChecks(unittest.TestCase):
 
 
 class RecordingGraphChecks(unittest.TestCase):
+    def test_ide_run_without_arguments_uses_source_boolean(self):
+        for enabled in (False, True):
+            with self.subTest(enabled=enabled), \
+                    recorder_environment(forbid_processor=not enabled) as recorder:
+                recorder.ENABLE_COLOR_SWAP = enabled
+                original_builder = recorder.build_vehicle_recording
+                vehicles = []
+
+                def capture_vehicle(*args, **kwargs):
+                    vehicle = original_builder(*args, **kwargs)
+                    vehicles.append(vehicle)
+                    return vehicle
+
+                with patch.object(recorder, "build_vehicle_recording", side_effect=capture_vehicle), \
+                        patch.object(recorder, "build_vehicle_driving",
+                                     side_effect=AssertionError("IDE Run started driving")), \
+                        patch.object(recorder.sys, "argv", [str(NEW / "recording_n03_color_swap.py")]), \
+                        patch.object(recorder.signal, "signal"):
+                    recorder.main()
+                self.assertEqual(len(vehicles), 1)
+                car = vehicles[0]
+                self.assertEqual(car.started_hz, recorder.DRIVE_LOOP_HZ)
+                self.assertTrue(car.stopped)
+                self.assertEqual(any("cam/color_swapped" in p["outputs"] for p in car.parts), enabled)
+                car.run_one()
+                self.assertEqual(graph_entry(car, part_type=FakeTub)["part"].rows[0]
+                                 ["cam/image_array"].shape, (120, 160, 3))
+
     def test_disabled_is_original_resize_and_never_loads_processor(self):
         with recorder_environment(forbid_processor=True) as recorder:
             car = recorder.build_vehicle_recording(show_window=False, enable_color_swap=False)

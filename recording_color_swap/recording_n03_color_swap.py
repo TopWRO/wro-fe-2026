@@ -2,19 +2,23 @@
 # -*- coding: utf-8 -*-
 """PS4/Dynamixel recording with optional 320x240 pillar-color processing.
 
-ENABLE_COLOR_SWAP is the editable default. External callers may override it via
-build_vehicle_recording(enable_color_swap=True/False), or use --color-swap and
---no-color-swap on the command line.
+IDE use: edit ENABLE_COLOR_SWAP below, then run this file without arguments.
+True enables pillar-color processing; False records the original images.
+No-argument startup selects manual PS4 recording. External callers may also
+use build_vehicle_recording(enable_color_swap=True/False).
 
 RGB flow: capture 320x240 -> optional red/green processing -> resize 160x120
 -> Tub image plus the original PS4 angle/throttle/mode labels. Processing runs
 on every live frame to maintain temporal tracking; only the Tub writer is gated
 by the original throttle recording threshold. Driving uses the original images.
 
-Examples (these start the real camera, controller and motors):
-    python3 recording_n03_color_swap.py --recording --color-swap
-    python3 recording_n03_color_swap.py --recording --no-color-swap
+Running this file starts the real camera, controller and motors.
+Command-line options remain available for optional overrides.
 """
+
+# IDE 设置：修改此变量、保存，然后直接点击“运行”，不需要填写运行参数。
+# True = 启用红绿替换；False = 关闭替换，按原来的图像流程录制。
+ENABLE_COLOR_SWAP = False
 
 # ---------------------------------------------------------------------------
 # Standard library
@@ -45,10 +49,6 @@ CROP_W, CROP_H       = (160, 120)      # image sent to network / tub
 PROJECT_ROOT       = Path(__file__).resolve().parent.parent
 DATA_PATH          = str(PROJECT_ROOT / "data")
 MODEL_PATH_DEFAULT = str(PROJECT_ROOT / "ccwmodel" / "mypilot.h5")
-
-# False: original recording image path, with no color processor imported.
-# True: replace only nonstandard red/green pillars before the 160x120 resize.
-ENABLE_COLOR_SWAP  = False
 
 DRIVE_LOOP_HZ      = 20
 RECORD_THRESHOLD   = 0.05              # raw joystick throttle threshold for recording
@@ -503,8 +503,8 @@ def build_argument_parser():
     import argparse
 
     parser = argparse.ArgumentParser(description="Record PS4 data with optional pillar red/green processing")
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--recording", action="store_true", help="Manual PS4 driving & data logging")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--recording", action="store_true", help="Manual PS4 driving & data logging (default)")
     group.add_argument("--driving", action="store_true", help="Autonomous driving with model")
     parser.add_argument("--model", default=MODEL_PATH_DEFAULT, help=".h5 model path for --driving mode")
     parser.add_argument("--color", default=DEFAULT_COLOR, choices=list(COLOR_RANGES.keys()),
@@ -525,7 +525,9 @@ def main(argv=None):
     if args.driving and (args.color_swap is True or args.data_path is not None):
         parser.error("--color-swap and --data-path are only available with --recording")
 
-    if args.recording:
+    # IDE Run supplies no arguments: default to manual recording and let the
+    # builder read ENABLE_COLOR_SWAP, rather than requiring command-line flags.
+    if not args.driving:
         vehicle = build_vehicle_recording(args.color, show_window=not args.no_window,
                                           enable_color_swap=args.color_swap,
                                           data_path=args.data_path)

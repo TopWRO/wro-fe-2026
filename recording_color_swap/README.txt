@@ -9,8 +9,10 @@
   PS4 的 user/angle、user/throttle、user/mode 与处理后的图像在同一循环保存。
 
 开关：
-  在 recording_n03_color_swap.py 顶部设置 ENABLE_COLOR_SWAP = True / False。
-  默认 False。外部调用或命令行参数可覆盖此默认值；启动前确定开关。
+  在 IDE 中打开 recording_n03_color_swap.py，顶部设置 ENABLE_COLOR_SWAP = True / False。
+  保存后直接点击“运行”，不需要填写 --recording 或其他运行参数；默认进入手动录制模式。
+  IDE 的解释器使用项目现有的 /home/pi/env/bin/python。
+  默认 False。外部调用或可选命令行参数仍可覆盖此默认值；启动前确定开关。
   启用时沿用原模型：可靠判为 tall / low 的非标准柱替换为相反颜色；
   stand 和不确定目标保留原色。保留目标位置、观测宽高及原物体明暗。
   处理在 320x240 原图上完成；不向训练图像叠加框线、文字或调试图。
