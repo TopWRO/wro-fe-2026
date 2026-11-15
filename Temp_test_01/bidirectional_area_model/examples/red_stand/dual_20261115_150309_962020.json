@@ -1,0 +1,140 @@
+{
+  "source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143922_363076_raw.png",
+  "program_version": "bidirectional_area_320x240",
+  "width": 320,
+  "height": 240,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 30,
+    "min_size": 5,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 2
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 1,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5,
+    "straight_edges": true
+  },
+  "palettes": {
+    "red": {
+      "median_hsv": [
+        177.0,
+        232.0,
+        158.5
+      ],
+      "standard_photos_used": 34,
+      "example_source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143926_797223_raw.png",
+      "example_bbox": [
+        164,
+        21,
+        17,
+        38
+      ]
+    },
+    "green": {
+      "median_hsv": [
+        76.0,
+        213.0,
+        88.5
+      ],
+      "standard_photos_used": 43,
+      "example_source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_green\\texture_20261115_144359_876834_raw.png",
+      "example_bbox": [
+        170,
+        19,
+        18,
+        40
+      ]
+    }
+  },
+  "frame_processing_ms": 15.532199991866946,
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        165,
+        56,
+        42,
+        68
+      ],
+      "shape_bbox_xywh": [
+        165,
+        56,
+        42,
+        68
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 42,
+      "axis_height_px": 68,
+      "axis_w_over_h": 0.6176470588235294,
+      "oriented_width_px": 40.00227737426758,
+      "oriented_height_px": 67.44737243652344,
+      "oriented_w_over_h": 0.5930887435520904,
+      "oriented_h_over_w": 1.6860883145595749,
+      "contour_area_px": 2178.5,
+      "rectangle_fill": 0.8074354481397079,
+      "polygon_vertices": 5,
+      "outline": "POLYGON-5",
+      "touches_image_border": false,
+      "source_color": "red",
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          170,
+          56
+        ],
+        [
+          206,
+          73
+        ],
+        [
+          191,
+          123
+        ],
+        [
+          167,
+          121
+        ]
+      ],
+      "edge_top_width_px": 39.81205749511719,
+      "edge_bottom_width_px": 24.083189010620117,
+      "edge_left_height_px": 65.0691909790039,
+      "edge_right_height_px": 52.201534271240234,
+      "average_width_px": 31.947623252868652,
+      "average_height_px": 58.63536262512207,
+      "average_w_over_h": 0.5448524887126873,
+      "average_h_over_w": 1.835359148973846,
+      "quad_fit_fraction": 0.7986325540361712,
+      "model_area_pixels": 2304,
+      "model_area_fraction": 0.03,
+      "log_area": -3.506557897319982,
+      "box_ratio": 0.5930887435520904,
+      "avg_ratio": 0.5448524887126873,
+      "avg_fallback": false,
+      "partial_view": false,
+      "full_box_ratio": 0.5925403833389282,
+      "full_avg_ratio": 0.4331571213594276,
+      "full_avg_fallback": false,
+      "model_label": "stand",
+      "model_margin": 1.0001223447432093,
+      "classification_ratio": 0.5448524887126873,
+      "model_outside_training_range": false,
+      "decision_reason": "area_plus_selected_aspect_model",
+      "decision": "NORMAL-KEEP",
+      "changed_pixels": 0,
+      "raw_decision": "NORMAL-KEEP",
+      "track_id": 1,
+      "filtered_ratio": 0.5448524887126873,
+      "pending_votes": 0,
+      "decision_held": false,
+      "target_color": "red"
+    }
+  ]
+}

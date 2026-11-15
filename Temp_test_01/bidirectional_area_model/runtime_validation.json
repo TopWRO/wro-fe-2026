@@ -1,0 +1,21 @@
+{
+  "raw_images": 238,
+  "standard_targets_unchanged": 81,
+  "primary_replay_errors": [
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_green\\texture_20261115_144248_451730_raw.png",
+      "truth": "tall",
+      "prediction": "stand"
+    }
+  ],
+  "synthetic_both_directions_and_standards": true,
+  "same_bbox_and_height": true,
+  "ui_keys_mocked": true,
+  "platform": "Windows-11-10.0.26300-SP0",
+  "opencv": "5.0.0",
+  "timed_frames": 476,
+  "mean_ms": 18.933918907090888,
+  "median_ms": 17.547600000398234,
+  "p95_ms": 27.20989999943413,
+  "capture_display_save_excluded": true
+}

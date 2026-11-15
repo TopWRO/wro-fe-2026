@@ -1,0 +1,232 @@
+{
+  "source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_green\\texture_20261115_144248_952904_raw.png",
+  "program_version": "bidirectional_area_320x240",
+  "width": 320,
+  "height": 240,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 30,
+    "min_size": 5,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 2
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 1,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5,
+    "straight_edges": true
+  },
+  "palettes": {
+    "red": {
+      "median_hsv": [
+        177.0,
+        232.0,
+        159.0
+      ],
+      "standard_photos_used": 34,
+      "example_source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143933_832745_raw.png",
+      "example_bbox": [
+        226,
+        36,
+        46,
+        53
+      ]
+    },
+    "green": {
+      "median_hsv": [
+        76.0,
+        213.0,
+        88.5
+      ],
+      "standard_photos_used": 43,
+      "example_source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_green\\texture_20261115_144408_541454_raw.png",
+      "example_bbox": [
+        205,
+        38,
+        43,
+        54
+      ]
+    }
+  },
+  "frame_processing_ms": 184.3585000024177,
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        26,
+        82,
+        55,
+        59
+      ],
+      "shape_bbox_xywh": [
+        28,
+        84,
+        26,
+        29
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 26,
+      "axis_height_px": 29,
+      "axis_w_over_h": 0.896551724137931,
+      "oriented_width_px": 9.263161659240723,
+      "oriented_height_px": 35.962860107421875,
+      "oriented_w_over_h": 0.2575757776653873,
+      "oriented_h_over_w": 3.8823526383722484,
+      "contour_area_px": 150.0,
+      "rectangle_fill": 0.4502749555786732,
+      "polygon_vertices": 6,
+      "outline": "POLYGON-6",
+      "touches_image_border": false,
+      "source_color": "green",
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          28,
+          86
+        ],
+        [
+          31,
+          84
+        ],
+        [
+          53,
+          112
+        ],
+        [
+          33,
+          101
+        ]
+      ],
+      "edge_top_width_px": 3.605551242828369,
+      "edge_bottom_width_px": 22.825424194335938,
+      "edge_left_height_px": 15.81138801574707,
+      "edge_right_height_px": 35.608985900878906,
+      "average_width_px": 13.215487718582153,
+      "average_height_px": 25.71018695831299,
+      "average_w_over_h": 0.5140175658780705,
+      "average_h_over_w": 1.9454588060463462,
+      "quad_fit_fraction": 0.8755868544600939,
+      "model_area_pixels": 995,
+      "model_area_fraction": 0.012955729166666667,
+      "log_area": -4.34621718197717,
+      "box_ratio": 0.2575757776653873,
+      "avg_ratio": 0.5140175658780705,
+      "avg_fallback": false,
+      "partial_view": false,
+      "full_box_ratio": 0.3051519989967346,
+      "full_avg_ratio": 0.5054408475395369,
+      "full_avg_fallback": false,
+      "model_label": "tall",
+      "model_margin": 1.747302763592801,
+      "classification_ratio": 0.5140175658780705,
+      "model_outside_training_range": false,
+      "decision_reason": "area_plus_selected_aspect_model",
+      "decision": "TALL-TEXTURE",
+      "changed_pixels": 1408,
+      "raw_decision": "TALL-TEXTURE",
+      "track_id": 2,
+      "filtered_ratio": 0.5140175658780705,
+      "pending_votes": 0,
+      "decision_held": false,
+      "target_color": "red",
+      "render_bbox_xywh": [
+        26,
+        82,
+        55,
+        59
+      ]
+    },
+    {
+      "id": 2,
+      "bbox_xywh": [
+        36,
+        148,
+        48,
+        30
+      ],
+      "shape_bbox_xywh": [
+        38,
+        150,
+        44,
+        28
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 44,
+      "axis_height_px": 28,
+      "axis_w_over_h": 1.5714285714285714,
+      "oriented_width_px": 32.350563049316406,
+      "oriented_height_px": 31.621755599975586,
+      "oriented_w_over_h": 1.0230476592938245,
+      "oriented_h_over_w": 0.9774715683238713,
+      "contour_area_px": 616.0,
+      "rectangle_fill": 0.6021613693183678,
+      "polygon_vertices": 5,
+      "outline": "POLYGON-5",
+      "touches_image_border": false,
+      "source_color": "green",
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          54,
+          151
+        ],
+        [
+          81,
+          153
+        ],
+        [
+          66,
+          177
+        ],
+        [
+          38,
+          162
+        ]
+      ],
+      "edge_top_width_px": 27.073972702026367,
+      "edge_bottom_width_px": 31.764760971069336,
+      "edge_left_height_px": 19.416488647460938,
+      "edge_right_height_px": 28.301942825317383,
+      "average_width_px": 29.41936683654785,
+      "average_height_px": 23.85921573638916,
+      "average_w_over_h": 1.2330399775747265,
+      "average_h_over_w": 0.8110037129265718,
+      "quad_fit_fraction": 0.8738417676407698,
+      "model_area_pixels": 1021,
+      "model_area_fraction": 0.013294270833333333,
+      "log_area": -4.320422100971098,
+      "box_ratio": 1.0230476592938245,
+      "avg_ratio": 1.2330399775747265,
+      "avg_fallback": false,
+      "partial_view": false,
+      "full_box_ratio": 1.6206896305084229,
+      "full_avg_ratio": 1.7282817991683455,
+      "full_avg_fallback": false,
+      "model_label": "tall",
+      "model_margin": 0.9997737392390618,
+      "classification_ratio": 1.2330399775747265,
+      "model_outside_training_range": false,
+      "decision_reason": "area_plus_selected_aspect_model",
+      "decision": "TALL-TEXTURE",
+      "changed_pixels": 1071,
+      "raw_decision": "TALL-TEXTURE",
+      "track_id": 1,
+      "filtered_ratio": 1.2330399775747265,
+      "pending_votes": 0,
+      "decision_held": false,
+      "target_color": "red",
+      "render_bbox_xywh": [
+        36,
+        148,
+        48,
+        30
+      ]
+    }
+  ]
+}

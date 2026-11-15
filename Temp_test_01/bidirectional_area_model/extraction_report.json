@@ -1,0 +1,96 @@
+{
+  "total_raw": 238,
+  "measured": 238,
+  "counts": {
+    "captures_320x240_tall_red": 39,
+    "captures_320x240_standard_red": 35,
+    "captures_320x240_short_red": 24,
+    "captures_320x240_tall_green": 51,
+    "captures_320x240_standard_green": 46,
+    "captures_320x240_short_green": 43
+  },
+  "problems": [
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143738_525531_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143739_290120_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143740_223282_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143740_807261_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143741_559424_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143752_061336_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143752_730965_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143754_205216_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143754_812838_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143755_521793_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143756_240105_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143802_372274_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143908_530476_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143920_534520_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143928_616629_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143929_422196_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143930_231403_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143933_832745_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_green\\texture_20261115_144248_952904_raw.png",
+      "targets": 2
+    },
+    {
+      "file": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_green\\texture_20261115_144354_772122_raw.png",
+      "targets": 4
+    }
+  ],
+  "avg_geometry_fallbacks": 16,
+  "partial_views": 26
+}

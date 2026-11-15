@@ -1,0 +1,232 @@
+{
+  "source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_tall_red\\texture_20261115_143740_807261_raw.png",
+  "program_version": "bidirectional_area_320x240",
+  "width": 320,
+  "height": 240,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 30,
+    "min_size": 5,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 2
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 1,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5,
+    "straight_edges": true
+  },
+  "palettes": {
+    "red": {
+      "median_hsv": [
+        177.0,
+        232.0,
+        158.5
+      ],
+      "standard_photos_used": 34,
+      "example_source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143926_797223_raw.png",
+      "example_bbox": [
+        164,
+        21,
+        17,
+        38
+      ]
+    },
+    "green": {
+      "median_hsv": [
+        76.0,
+        213.0,
+        88.5
+      ],
+      "standard_photos_used": 43,
+      "example_source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_green\\texture_20261115_144359_876834_raw.png",
+      "example_bbox": [
+        170,
+        19,
+        18,
+        40
+      ]
+    }
+  },
+  "frame_processing_ms": 26.26139996573329,
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        19,
+        60,
+        11,
+        24
+      ],
+      "shape_bbox_xywh": [
+        21,
+        62,
+        7,
+        20
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 7,
+      "axis_height_px": 20,
+      "axis_w_over_h": 0.35,
+      "oriented_width_px": 5.397956371307373,
+      "oriented_height_px": 19.432645797729492,
+      "oriented_w_over_h": 0.27777773688120583,
+      "oriented_h_over_w": 3.6000005300196505,
+      "contour_area_px": 44.0,
+      "rectangle_fill": 0.41946079114190754,
+      "polygon_vertices": 9,
+      "outline": "IRREGULAR/ROUND",
+      "touches_image_border": false,
+      "source_color": "red",
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          22,
+          69
+        ],
+        [
+          27,
+          62
+        ],
+        [
+          27,
+          74
+        ],
+        [
+          21,
+          81
+        ]
+      ],
+      "edge_top_width_px": 8.602325439453125,
+      "edge_bottom_width_px": 9.219544410705566,
+      "edge_left_height_px": 12.041594505310059,
+      "edge_right_height_px": 12.0,
+      "average_width_px": 8.910934925079346,
+      "average_height_px": 12.02079725265503,
+      "average_w_over_h": 0.7412931719741959,
+      "average_h_over_w": 1.34899394437537,
+      "quad_fit_fraction": 0.9057971014492754,
+      "model_area_pixels": 228,
+      "model_area_fraction": 0.00296875,
+      "log_area": -5.819614290181323,
+      "box_ratio": 0.27777773688120583,
+      "avg_ratio": 0.7412931719741959,
+      "avg_fallback": false,
+      "partial_view": false,
+      "full_box_ratio": 0.43478259444236755,
+      "full_avg_ratio": 0.5693988555516952,
+      "full_avg_fallback": false,
+      "model_label": "tall",
+      "model_margin": 0.4897567865338832,
+      "classification_ratio": 0.7412931719741959,
+      "model_outside_training_range": false,
+      "decision_reason": "area_plus_selected_aspect_model",
+      "decision": "TALL-TEXTURE",
+      "changed_pixels": 229,
+      "raw_decision": "TALL-TEXTURE",
+      "track_id": 2,
+      "filtered_ratio": 0.7412931719741959,
+      "pending_votes": 0,
+      "decision_held": false,
+      "target_color": "green",
+      "render_bbox_xywh": [
+        19,
+        60,
+        11,
+        24
+      ]
+    },
+    {
+      "id": 2,
+      "bbox_xywh": [
+        186,
+        5,
+        45,
+        86
+      ],
+      "shape_bbox_xywh": [
+        187,
+        6,
+        44,
+        85
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 44,
+      "axis_height_px": 85,
+      "axis_w_over_h": 0.5176470588235295,
+      "oriented_width_px": 30.802026748657227,
+      "oriented_height_px": 85.85761260986328,
+      "oriented_w_over_h": 0.3587570841111264,
+      "oriented_h_over_w": 2.787401404149684,
+      "contour_area_px": 2103.5,
+      "rectangle_fill": 0.7953978532996422,
+      "polygon_vertices": 4,
+      "outline": "QUAD",
+      "touches_image_border": false,
+      "source_color": "red",
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          199,
+          8
+        ],
+        [
+          229,
+          8
+        ],
+        [
+          205,
+          90
+        ],
+        [
+          187,
+          86
+        ]
+      ],
+      "edge_top_width_px": 30.0,
+      "edge_bottom_width_px": 18.439088821411133,
+      "edge_left_height_px": 78.91767883300781,
+      "edge_right_height_px": 85.4400405883789,
+      "average_width_px": 24.219544410705566,
+      "average_height_px": 82.17885971069336,
+      "average_w_over_h": 0.29471745526731913,
+      "average_h_over_w": 3.3930803287269313,
+      "quad_fit_fraction": 0.8753636160214813,
+      "model_area_pixels": 2271,
+      "model_area_fraction": 0.0295703125,
+      "log_area": -3.520984377030205,
+      "box_ratio": 0.3587570841111264,
+      "avg_ratio": 0.29471745526731913,
+      "avg_fallback": false,
+      "partial_view": false,
+      "full_box_ratio": 0.36656275391578674,
+      "full_avg_ratio": 0.3074410160246358,
+      "full_avg_fallback": false,
+      "model_label": "tall",
+      "model_margin": 1.0595163493155895,
+      "classification_ratio": 0.29471745526731913,
+      "model_outside_training_range": false,
+      "decision_reason": "area_plus_selected_aspect_model",
+      "decision": "TALL-TEXTURE",
+      "changed_pixels": 2272,
+      "raw_decision": "TALL-TEXTURE",
+      "track_id": 1,
+      "filtered_ratio": 0.29471745526731913,
+      "pending_votes": 0,
+      "decision_held": false,
+      "target_color": "green",
+      "render_bbox_xywh": [
+        186,
+        5,
+        45,
+        86
+      ]
+    }
+  ]
+}

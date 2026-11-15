@@ -1,0 +1,32 @@
+{
+  "red": {
+    "median_hsv": [
+      177.0,
+      232.0,
+      159.0
+    ],
+    "standard_photos_used": 34,
+    "example_source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_red\\texture_20261115_143933_832745_raw.png",
+    "example_bbox": [
+      226,
+      36,
+      46,
+      53
+    ]
+  },
+  "green": {
+    "median_hsv": [
+      76.0,
+      213.0,
+      88.5
+    ],
+    "standard_photos_used": 43,
+    "example_source": "C:\\Users\\xiaoy\\Desktop\\captures_320x240_standard_green\\texture_20261115_144408_541454_raw.png",
+    "example_bbox": [
+      205,
+      38,
+      43,
+      54
+    ]
+  }
+}
