@@ -1,0 +1,99 @@
+{
+  "source": null,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 4
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 2,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5
+  },
+  "image_width": 320,
+  "image_height": 240,
+  "program_version": "area_model_320x240_capture",
+  "model_status": "Original 640x480-trained normalized-area model; new 320x240 data not yet fitted",
+  "model": "102-photo area/rotated-box-ratio RBF; 36 support vectors",
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        94,
+        5,
+        41,
+        69
+      ],
+      "shape_bbox_xywh": [
+        95,
+        5,
+        37,
+        69
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 37,
+      "axis_height_px": 69,
+      "axis_w_over_h": 0.5362318840579711,
+      "oriented_width_px": 25.295330047607422,
+      "oriented_height_px": 70.46038055419922,
+      "oriented_w_over_h": 0.35900075827932637,
+      "oriented_h_over_w": 2.7855094367849045,
+      "contour_area_px": 1413.0,
+      "rectangle_fill": 0.792787560398599,
+      "polygon_vertices": 4,
+      "outline": "QUAD",
+      "touches_image_border": false,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          95,
+          8
+        ],
+        [
+          118,
+          5
+        ],
+        [
+          131,
+          72
+        ],
+        [
+          115,
+          73
+        ]
+      ],
+      "edge_top_width_px": 23.194826126098633,
+      "edge_bottom_width_px": 16.031219482421875,
+      "edge_left_height_px": 68.00735473632812,
+      "edge_right_height_px": 68.24954223632812,
+      "average_width_px": 19.613022804260254,
+      "average_height_px": 68.12844848632812,
+      "average_w_over_h": 0.2878830098148522,
+      "average_h_over_w": 3.4736332673579295,
+      "quad_fit_fraction": 0.8621815806662312,
+      "model_area_pixels": 1599,
+      "model_area_fraction": 0.0208203125,
+      "model_label": "tall",
+      "model_margin": 1.0020449043605952,
+      "model_outside_training_range": false,
+      "classification_ratio": 0.35900075827932637,
+      "decision_reason": "learned_area_and_box_ratio",
+      "partial_view": false,
+      "decision": "TALL-TEXTURE",
+      "changed_pixels": 1574,
+      "raw_decision": "TALL-TEXTURE",
+      "track_id": 15,
+      "filtered_ratio": 0.3734177281344408,
+      "pending_votes": 0,
+      "decision_held": false
+    }
+  ]
+}

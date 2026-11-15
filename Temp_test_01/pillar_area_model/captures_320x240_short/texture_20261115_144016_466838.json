@@ -1,0 +1,99 @@
+{
+  "source": null,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 4
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 2,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5
+  },
+  "image_width": 320,
+  "image_height": 240,
+  "program_version": "area_model_320x240_capture",
+  "model_status": "Original 640x480-trained normalized-area model; new 320x240 data not yet fitted",
+  "model": "102-photo area/rotated-box-ratio RBF; 36 support vectors",
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        117,
+        36,
+        19,
+        20
+      ],
+      "shape_bbox_xywh": [
+        117,
+        36,
+        17,
+        18
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 17,
+      "axis_height_px": 18,
+      "axis_w_over_h": 0.9444444444444444,
+      "oriented_width_px": 16.0,
+      "oriented_height_px": 17.0,
+      "oriented_w_over_h": 0.9411764705882353,
+      "oriented_h_over_w": 1.0625,
+      "contour_area_px": 227.0,
+      "rectangle_fill": 0.8345588235294118,
+      "polygon_vertices": 7,
+      "outline": "IRREGULAR/ROUND",
+      "touches_image_border": false,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          118,
+          37
+        ],
+        [
+          131,
+          38
+        ],
+        [
+          133,
+          51
+        ],
+        [
+          120,
+          53
+        ]
+      ],
+      "edge_top_width_px": 13.03840446472168,
+      "edge_bottom_width_px": 13.152946472167969,
+      "edge_left_height_px": 16.124515533447266,
+      "edge_right_height_px": 13.152946472167969,
+      "average_width_px": 13.095675468444824,
+      "average_height_px": 14.638731002807617,
+      "average_w_over_h": 0.8945908949302473,
+      "average_h_over_w": 1.1178293962828356,
+      "quad_fit_fraction": 0.791231732776618,
+      "model_area_pixels": 283,
+      "model_area_fraction": 0.0036848958333333334,
+      "model_label": "low",
+      "model_margin": 0.5758576580332075,
+      "model_outside_training_range": false,
+      "classification_ratio": 0.9411764705882353,
+      "decision_reason": "learned_area_and_box_ratio",
+      "partial_view": false,
+      "decision": "SHORT-TEXTURE",
+      "changed_pixels": 259,
+      "raw_decision": "SHORT-TEXTURE",
+      "track_id": 1,
+      "filtered_ratio": 0.9411764705882353,
+      "pending_votes": 0,
+      "decision_held": false
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "source": null,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 4
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 2,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5
+  },
+  "image_width": 320,
+  "image_height": 240,
+  "program_version": "area_model_320x240_capture",
+  "model_status": "Original 640x480-trained normalized-area model; new 320x240 data not yet fitted",
+  "model": "102-photo area/rotated-box-ratio RBF; 36 support vectors",
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        191,
+        40,
+        23,
+        24
+      ],
+      "shape_bbox_xywh": [
+        194,
+        41,
+        19,
+        23
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 19,
+      "axis_height_px": 23,
+      "axis_w_over_h": 0.8260869565217391,
+      "oriented_width_px": 17.292329788208008,
+      "oriented_height_px": 22.54340171813965,
+      "oriented_w_over_h": 0.7670683424096398,
+      "oriented_h_over_w": 1.3036648036583511,
+      "contour_area_px": 325.0,
+      "rectangle_fill": 0.8337011514686297,
+      "polygon_vertices": 5,
+      "outline": "POLYGON-5",
+      "touches_image_border": false,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          197,
+          42
+        ],
+        [
+          212,
+          41
+        ],
+        [
+          208,
+          62
+        ],
+        [
+          194,
+          62
+        ]
+      ],
+      "edge_top_width_px": 15.033296585083008,
+      "edge_bottom_width_px": 14.0,
+      "edge_left_height_px": 20.2237491607666,
+      "edge_right_height_px": 21.3775577545166,
+      "average_width_px": 14.516648292541504,
+      "average_height_px": 20.8006534576416,
+      "average_w_over_h": 0.6978938580993703,
+      "average_h_over_w": 1.432882648836285,
+      "quad_fit_fraction": 0.8691176470588236,
+      "model_area_pixels": 387,
+      "model_area_fraction": 0.0050390625,
+      "model_label": "low",
+      "model_margin": 1.1435012010319145,
+      "model_outside_training_range": false,
+      "classification_ratio": 0.7670683424096398,
+      "decision_reason": "learned_area_and_box_ratio",
+      "partial_view": false,
+      "decision": "SHORT-TEXTURE",
+      "changed_pixels": 365,
+      "raw_decision": "SHORT-TEXTURE",
+      "track_id": 2,
+      "filtered_ratio": 0.6983607829395274,
+      "pending_votes": 0,
+      "decision_held": false
+    }
+  ]
+}

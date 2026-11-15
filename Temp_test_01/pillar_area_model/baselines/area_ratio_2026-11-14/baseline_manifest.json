@@ -1,0 +1,15 @@
+{
+  "baseline_name": "area_ratio_2026-11-14",
+  "program": "green_texture_live_area_model.py",
+  "sha256": "c698f9786b6042e622b8659c528ad1e49bdf462b0dbb61eda362ca53199890fb",
+  "method": "Filled red target area + rotated-box width/height classifier; temporal mask/class stabilization; photographed green texture transplant",
+  "user_feedback": "User reports stable visual results, recognition remains stable in some edge-clipped views, and no misclassification noticed by eye so far.",
+  "status": "Accepted as comparison baseline after initial user visual testing",
+  "limitation": "This is user visual feedback, not measured 100% accuracy. Previous grouped and historical validation limitations remain applicable.",
+  "camera_capture_wh": [
+    640,
+    480
+  ],
+  "model_margin": 0.15,
+  "switch_frames": 5
+}

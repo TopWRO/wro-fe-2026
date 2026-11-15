@@ -1,0 +1,99 @@
+{
+  "source": null,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 4
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 2,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5
+  },
+  "image_width": 320,
+  "image_height": 240,
+  "program_version": "area_model_320x240_capture",
+  "model_status": "Original 640x480-trained normalized-area model; new 320x240 data not yet fitted",
+  "model": "102-photo area/rotated-box-ratio RBF; 36 support vectors",
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        189,
+        15,
+        16,
+        29
+      ],
+      "shape_bbox_xywh": [
+        189,
+        15,
+        15,
+        28
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 15,
+      "axis_height_px": 28,
+      "axis_w_over_h": 0.5357142857142857,
+      "oriented_width_px": 11.801179885864258,
+      "oriented_height_px": 28.38519287109375,
+      "oriented_w_over_h": 0.415751266495077,
+      "oriented_h_over_w": 2.405284314417936,
+      "contour_area_px": 279.5,
+      "rectangle_fill": 0.8343812426203252,
+      "polygon_vertices": 6,
+      "outline": "POLYGON-6",
+      "touches_image_border": false,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          193,
+          15
+        ],
+        [
+          203,
+          23
+        ],
+        [
+          199,
+          42
+        ],
+        [
+          190,
+          42
+        ]
+      ],
+      "edge_top_width_px": 12.806248664855957,
+      "edge_bottom_width_px": 9.0,
+      "edge_left_height_px": 27.166154861450195,
+      "edge_right_height_px": 19.416488647460938,
+      "average_width_px": 10.903124332427979,
+      "average_height_px": 23.291321754455566,
+      "average_w_over_h": 0.46811960469105796,
+      "average_h_over_w": 2.1362061959784056,
+      "quad_fit_fraction": 0.7622950819672131,
+      "model_area_pixels": 364,
+      "model_area_fraction": 0.0047395833333333335,
+      "model_label": "stand",
+      "model_margin": 1.133478922067243,
+      "model_outside_training_range": false,
+      "classification_ratio": 0.415751266495077,
+      "decision_reason": "learned_area_and_box_ratio",
+      "partial_view": false,
+      "decision": "NORMAL-KEEP",
+      "changed_pixels": 0,
+      "raw_decision": "NORMAL-KEEP",
+      "track_id": 3,
+      "filtered_ratio": 0.4194910074644906,
+      "pending_votes": 0,
+      "decision_held": false
+    }
+  ]
+}
