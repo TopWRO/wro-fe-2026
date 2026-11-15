@@ -1,0 +1,79 @@
+{
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3
+  },
+  "size_wh": [
+    640,
+    480
+  ],
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        181,
+        3,
+        64,
+        110
+      ],
+      "axis_width_px": 64,
+      "axis_height_px": 110,
+      "axis_w_over_h": 0.5818181818181818,
+      "oriented_width_px": 44.29758834838867,
+      "oriented_height_px": 113.0797348022461,
+      "oriented_w_over_h": 0.3917376391610426,
+      "oriented_h_over_w": 2.5527289186242883,
+      "contour_area_px": 4209.0,
+      "rectangle_fill": 0.8402607191933811,
+      "polygon_vertices": 5,
+      "outline": "POLYGON-5",
+      "touches_image_border": false
+    },
+    {
+      "id": 2,
+      "bbox_xywh": [
+        304,
+        32,
+        37,
+        76
+      ],
+      "axis_width_px": 37,
+      "axis_height_px": 76,
+      "axis_w_over_h": 0.4868421052631579,
+      "oriented_width_px": 36.0,
+      "oriented_height_px": 75.0,
+      "oriented_w_over_h": 0.48,
+      "oriented_h_over_w": 2.0833333333333335,
+      "contour_area_px": 2347.5,
+      "rectangle_fill": 0.8694444444444445,
+      "polygon_vertices": 6,
+      "outline": "POLYGON-6",
+      "touches_image_border": false
+    },
+    {
+      "id": 3,
+      "bbox_xywh": [
+        423,
+        67,
+        37,
+        41
+      ],
+      "axis_width_px": 37,
+      "axis_height_px": 41,
+      "axis_w_over_h": 0.9024390243902439,
+      "oriented_width_px": 28.460498809814453,
+      "oriented_height_px": 43.63942337036133,
+      "oriented_w_over_h": 0.6521740346629792,
+      "oriented_h_over_w": 1.5333330473924267,
+      "contour_area_px": 1037.5,
+      "rectangle_fill": 0.8353463792901937,
+      "polygon_vertices": 4,
+      "outline": "QUAD",
+      "touches_image_border": false
+    }
+  ]
+}

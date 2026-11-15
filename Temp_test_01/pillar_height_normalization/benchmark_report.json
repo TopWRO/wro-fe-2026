@@ -1,0 +1,85 @@
+{
+  "platform": "Windows-11-10.0.26300-SP0",
+  "processor": "AMD64 Family 23 Model 96 Stepping 1, AuthenticAMD",
+  "opencv": "5.0.0",
+  "image_size": [
+    640,
+    480
+  ],
+  "frames": 306,
+  "photos_checked": 102,
+  "standard_unchanged": 38,
+  "special_anchors_preserved": 64,
+  "synthetic_slant_checks": 10,
+  "capture_display_save_excluded": true,
+  "groups": {
+    "all": {
+      "analysis_ms": {
+        "mean_ms": 29.06984640429941,
+        "median_ms": 27.000500034773722,
+        "p95_ms": 39.39192503457889
+      },
+      "height_render_ms": {
+        "mean_ms": 14.50993202693663,
+        "median_ms": 18.073199986247346,
+        "p95_ms": 31.837774979067035
+      },
+      "frame_processing_ms": {
+        "mean_ms": 43.579778431236036,
+        "median_ms": 44.56229999777861,
+        "p95_ms": 69.89700003759935
+      }
+    },
+    "tall": {
+      "analysis_ms": {
+        "mean_ms": 34.30077171592851,
+        "median_ms": 30.894799972884357,
+        "p95_ms": 50.03881999873554
+      },
+      "height_render_ms": {
+        "mean_ms": 24.095389901453423,
+        "median_ms": 21.25090005574748,
+        "p95_ms": 36.33030999917537
+      },
+      "frame_processing_ms": {
+        "mean_ms": 58.39616161738193,
+        "median_ms": 52.439200051594526,
+        "p95_ms": 82.73953001480548
+      }
+    },
+    "stand": {
+      "analysis_ms": {
+        "mean_ms": 26.250025438728922,
+        "median_ms": 26.18074999190867,
+        "p95_ms": 28.559869993478056
+      },
+      "height_render_ms": {
+        "mean_ms": 1.9560771909534211,
+        "median_ms": 1.9199500093236566,
+        "p95_ms": 2.501795013085939
+      },
+      "frame_processing_ms": {
+        "mean_ms": 28.206102629682345,
+        "median_ms": 28.14804995432496,
+        "p95_ms": 30.465405018185262
+      }
+    },
+    "low": {
+      "analysis_ms": {
+        "mean_ms": 26.957996772296767,
+        "median_ms": 26.467800023965538,
+        "p95_ms": 30.88094000704586
+      },
+      "height_render_ms": {
+        "mean_ms": 19.6946537659143,
+        "median_ms": 18.86410004226491,
+        "p95_ms": 26.440920017193996
+      },
+      "frame_processing_ms": {
+        "mean_ms": 46.65265053821107,
+        "median_ms": 45.56400002911687,
+        "p95_ms": 54.4822399970144
+      }
+    }
+  }
+}

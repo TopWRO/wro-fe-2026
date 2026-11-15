@@ -1,0 +1,97 @@
+{
+  "source": null,
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 4
+  },
+  "rules": {
+    "normal_min": 0.3,
+    "normal_max": 0.6,
+    "valid_min": 0.2,
+    "valid_max": 1.6,
+    "edge_pixels": 2,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "measurement": "average",
+    "switch_frames": 5,
+    "hysteresis": 0.025
+  },
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        361,
+        74,
+        42,
+        45
+      ],
+      "shape_bbox_xywh": [
+        362,
+        75,
+        39,
+        43
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 39,
+      "axis_height_px": 43,
+      "axis_w_over_h": 0.9069767441860465,
+      "oriented_width_px": 33.37302017211914,
+      "oriented_height_px": 43.56573486328125,
+      "oriented_w_over_h": 0.7660382701416821,
+      "oriented_h_over_w": 1.3054178087147599,
+      "contour_area_px": 1254.0,
+      "rectangle_fill": 0.8624957851882494,
+      "polygon_vertices": 5,
+      "outline": "POLYGON-5",
+      "touches_image_border": false,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          368,
+          80
+        ],
+        [
+          399,
+          77
+        ],
+        [
+          392,
+          116
+        ],
+        [
+          364,
+          114
+        ]
+      ],
+      "edge_top_width_px": 31.14482307434082,
+      "edge_bottom_width_px": 28.07133674621582,
+      "edge_left_height_px": 34.2344856262207,
+      "edge_right_height_px": 39.623226165771484,
+      "average_width_px": 29.60807991027832,
+      "average_height_px": 36.928855895996094,
+      "average_w_over_h": 0.8017600110240213,
+      "average_h_over_w": 1.2472560195697255,
+      "quad_fit_fraction": 0.8108720271800679,
+      "base_v_found": false,
+      "base_geometry_ratio": null,
+      "base_corner_points": [],
+      "classification_ratio": 0.8017600110240213,
+      "decision_reason": "average_opposite_edges",
+      "partial_view": false,
+      "decision": "SHORT-TEXTURE",
+      "changed_pixels": 1302,
+      "raw_decision": "SHORT-TEXTURE",
+      "track_id": 1,
+      "filtered_ratio": 0.8017600110240213,
+      "pending_votes": 0,
+      "decision_held": false
+    }
+  ]
+}

@@ -1,0 +1,256 @@
+{
+  "grouped_summary": {
+    "accuracy": 0.9803921568627451,
+    "standard_false_conversion": 0.02631578947368421,
+    "special_missed_conversion": 0.015625,
+    "confusion": [
+      [
+        96,
+        3,
+        0
+      ],
+      [
+        0,
+        111,
+        3
+      ],
+      [
+        0,
+        0,
+        93
+      ]
+    ]
+  },
+  "rejection_tradeoff": [
+    {
+      "cutoff": 0,
+      "coverage": 1.0,
+      "accepted_accuracy": 0.9803921568627451,
+      "standard_false_conversion": 0.02631578947368421,
+      "special_missed_conversion": 0.015625
+    },
+    {
+      "cutoff": 0.05,
+      "coverage": 0.9901960784313726,
+      "accepted_accuracy": 0.9801980198019802,
+      "standard_false_conversion": 0.02631578947368421,
+      "special_missed_conversion": 0.03125
+    },
+    {
+      "cutoff": 0.1,
+      "coverage": 0.9901960784313726,
+      "accepted_accuracy": 0.9801980198019802,
+      "standard_false_conversion": 0.02631578947368421,
+      "special_missed_conversion": 0.03125
+    },
+    {
+      "cutoff": 0.15,
+      "coverage": 0.9836601307189542,
+      "accepted_accuracy": 0.9833887043189369,
+      "standard_false_conversion": 0.02631578947368421,
+      "special_missed_conversion": 0.036458333333333336
+    },
+    {
+      "cutoff": 0.2,
+      "coverage": 0.9738562091503268,
+      "accepted_accuracy": 0.9865771812080537,
+      "standard_false_conversion": 0.02631578947368421,
+      "special_missed_conversion": 0.046875
+    },
+    {
+      "cutoff": 0.3,
+      "coverage": 0.9673202614379085,
+      "accepted_accuracy": 0.9898648648648649,
+      "standard_false_conversion": 0.02631578947368421,
+      "special_missed_conversion": 0.046875
+    }
+  ],
+  "errors": [
+    {
+      "seed": 0,
+      "label": "tall",
+      "prediction": "stand",
+      "margin": 0.17412412080604506,
+      "index": 18,
+      "file": "C:\\Users\\xiaoy\\Desktop\\tall\\texture_20261114_210004_870570_raw.png",
+      "target_count": 1,
+      "area_pixels": 56410,
+      "area_fraction": 0.18362630208333333,
+      "log_area": -1.6948525535216323,
+      "avg_ratio": 0.5728312284863593,
+      "box_ratio": 0.8331245283427546,
+      "contour_area": 54941.0,
+      "quad_valid": true,
+      "fill": 0.6863650744944996,
+      "quad_fill": 0.8093553736504128,
+      "bbox_x": 331,
+      "bbox_y": 46,
+      "bbox_w": 283,
+      "bbox_h": 315,
+      "center_x": 0.73828125,
+      "center_y": 0.4239583333333333,
+      "partial": false,
+      "top_bottom_ratio": 3.0433802498464333,
+      "left_right_ratio": 0.9962130322174871
+    },
+    {
+      "seed": 0,
+      "label": "stand",
+      "prediction": "low",
+      "margin": 0.631941858519288,
+      "index": 20,
+      "file": "C:\\Users\\xiaoy\\Desktop\\stand\\texture_20261114_210357_844538_raw.png",
+      "target_count": 1,
+      "area_pixels": 32267,
+      "area_fraction": 0.10503580729166667,
+      "log_area": -2.253453965133943,
+      "avg_ratio": 1.1316370869785517,
+      "box_ratio": 1.1146397019284269,
+      "contour_area": 31096.0,
+      "quad_valid": true,
+      "fill": 0.7239418500520126,
+      "quad_fill": 0.7580099471460422,
+      "bbox_x": 388,
+      "bbox_y": 187,
+      "bbox_w": 226,
+      "bbox_h": 203,
+      "center_x": 0.7828125,
+      "center_y": 0.6010416666666667,
+      "partial": false,
+      "top_bottom_ratio": 0.5516485473993044,
+      "left_right_ratio": 1.5553021187589215
+    },
+    {
+      "seed": 13,
+      "label": "tall",
+      "prediction": "stand",
+      "margin": 0.13321363665276648,
+      "index": 18,
+      "file": "C:\\Users\\xiaoy\\Desktop\\tall\\texture_20261114_210004_870570_raw.png",
+      "target_count": 1,
+      "area_pixels": 56410,
+      "area_fraction": 0.18362630208333333,
+      "log_area": -1.6948525535216323,
+      "avg_ratio": 0.5728312284863593,
+      "box_ratio": 0.8331245283427546,
+      "contour_area": 54941.0,
+      "quad_valid": true,
+      "fill": 0.6863650744944996,
+      "quad_fill": 0.8093553736504128,
+      "bbox_x": 331,
+      "bbox_y": 46,
+      "bbox_w": 283,
+      "bbox_h": 315,
+      "center_x": 0.73828125,
+      "center_y": 0.4239583333333333,
+      "partial": false,
+      "top_bottom_ratio": 3.0433802498464333,
+      "left_right_ratio": 0.9962130322174871
+    },
+    {
+      "seed": 13,
+      "label": "stand",
+      "prediction": "low",
+      "margin": 0.526620063073065,
+      "index": 20,
+      "file": "C:\\Users\\xiaoy\\Desktop\\stand\\texture_20261114_210357_844538_raw.png",
+      "target_count": 1,
+      "area_pixels": 32267,
+      "area_fraction": 0.10503580729166667,
+      "log_area": -2.253453965133943,
+      "avg_ratio": 1.1316370869785517,
+      "box_ratio": 1.1146397019284269,
+      "contour_area": 31096.0,
+      "quad_valid": true,
+      "fill": 0.7239418500520126,
+      "quad_fill": 0.7580099471460422,
+      "bbox_x": 388,
+      "bbox_y": 187,
+      "bbox_w": 226,
+      "bbox_h": 203,
+      "center_x": 0.7828125,
+      "center_y": 0.6010416666666667,
+      "partial": false,
+      "top_bottom_ratio": 0.5516485473993044,
+      "left_right_ratio": 1.5553021187589215
+    },
+    {
+      "seed": 37,
+      "label": "tall",
+      "prediction": "stand",
+      "margin": 0.2220070794623304,
+      "index": 18,
+      "file": "C:\\Users\\xiaoy\\Desktop\\tall\\texture_20261114_210004_870570_raw.png",
+      "target_count": 1,
+      "area_pixels": 56410,
+      "area_fraction": 0.18362630208333333,
+      "log_area": -1.6948525535216323,
+      "avg_ratio": 0.5728312284863593,
+      "box_ratio": 0.8331245283427546,
+      "contour_area": 54941.0,
+      "quad_valid": true,
+      "fill": 0.6863650744944996,
+      "quad_fill": 0.8093553736504128,
+      "bbox_x": 331,
+      "bbox_y": 46,
+      "bbox_w": 283,
+      "bbox_h": 315,
+      "center_x": 0.73828125,
+      "center_y": 0.4239583333333333,
+      "partial": false,
+      "top_bottom_ratio": 3.0433802498464333,
+      "left_right_ratio": 0.9962130322174871
+    },
+    {
+      "seed": 37,
+      "label": "stand",
+      "prediction": "low",
+      "margin": 0.6257866241536172,
+      "index": 20,
+      "file": "C:\\Users\\xiaoy\\Desktop\\stand\\texture_20261114_210357_844538_raw.png",
+      "target_count": 1,
+      "area_pixels": 32267,
+      "area_fraction": 0.10503580729166667,
+      "log_area": -2.253453965133943,
+      "avg_ratio": 1.1316370869785517,
+      "box_ratio": 1.1146397019284269,
+      "contour_area": 31096.0,
+      "quad_valid": true,
+      "fill": 0.7239418500520126,
+      "quad_fill": 0.7580099471460422,
+      "bbox_x": 388,
+      "bbox_y": 187,
+      "bbox_w": 226,
+      "bbox_h": 203,
+      "center_x": 0.7828125,
+      "center_y": 0.6010416666666667,
+      "partial": false,
+      "top_bottom_ratio": 0.5516485473993044,
+      "left_right_ratio": 1.5553021187589215
+    }
+  ],
+  "training_fit": {
+    "accuracy": 1.0,
+    "standard_false_conversion": 0.0,
+    "special_missed_conversion": 0.0,
+    "confusion": [
+      [
+        33,
+        0,
+        0
+      ],
+      [
+        0,
+        38,
+        0
+      ],
+      [
+        0,
+        0,
+        31
+      ]
+    ]
+  },
+  "support_vectors": 36,
+  "export_verified_random_points": 10000
+}

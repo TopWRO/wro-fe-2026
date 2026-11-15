@@ -1,0 +1,83 @@
+[
+  {
+    "file": "red_recolor_v3\\verified_output\\red_20261114_190939_928020_raw.png",
+    "label": "tall",
+    "prediction": "stand",
+    "decision": "NORMAL-KEEP",
+    "area": 4685,
+    "ratio": 0.4077184334543091,
+    "margin": 0.16325819969418814
+  },
+  {
+    "file": "red_recolor_v3\\verified_output\\red_20261114_190939_928020_raw.png",
+    "label": "stand",
+    "prediction": "stand",
+    "decision": "NORMAL-KEEP",
+    "area": 2602,
+    "ratio": 0.48,
+    "margin": 0.9239140221252129
+  },
+  {
+    "file": "red_recolor_v3\\verified_output\\red_20261114_190939_928020_raw.png",
+    "label": "low",
+    "prediction": "low",
+    "decision": "SHORT-TEXTURE",
+    "area": 1166,
+    "ratio": 0.6806450959798096,
+    "margin": 1.0461200770654493
+  },
+  {
+    "file": "red_recolor_v3\\verified_output\\red_20261114_190940_015556_raw.png",
+    "label": "tall",
+    "prediction": "stand",
+    "decision": "UNKNOWN-KEEP",
+    "area": 4683,
+    "ratio": 0.40613394541893455,
+    "margin": 0.12626266318473162
+  },
+  {
+    "file": "red_recolor_v3\\verified_output\\red_20261114_190940_015556_raw.png",
+    "label": "stand",
+    "prediction": "stand",
+    "decision": "NORMAL-KEEP",
+    "area": 2597,
+    "ratio": 0.4666666666666667,
+    "margin": 0.9871336709831438
+  },
+  {
+    "file": "red_recolor_v3\\verified_output\\red_20261114_190940_015556_raw.png",
+    "label": "low",
+    "prediction": "low",
+    "decision": "SHORT-TEXTURE",
+    "area": 1162,
+    "ratio": 0.6806450959798096,
+    "margin": 1.0464922101723793
+  },
+  {
+    "file": "red_shape_v2\\example_result\\red_20261114_190134_341272_raw.png",
+    "label": "tall",
+    "prediction": "tall",
+    "decision": "TALL-TEXTURE",
+    "area": 4711,
+    "ratio": 0.3917376391610426,
+    "margin": 0.21881178813135188
+  },
+  {
+    "file": "red_shape_v2\\example_result\\red_20261114_190134_341272_raw.png",
+    "label": "stand",
+    "prediction": "stand",
+    "decision": "NORMAL-KEEP",
+    "area": 2634,
+    "ratio": 0.48,
+    "margin": 0.9252219305999256
+  },
+  {
+    "file": "red_shape_v2\\example_result\\red_20261114_190134_341272_raw.png",
+    "label": "low",
+    "prediction": "low",
+    "decision": "SHORT-TEXTURE",
+    "area": 1160,
+    "ratio": 0.6521740346629792,
+    "margin": 0.8815791044043904
+  }
+]

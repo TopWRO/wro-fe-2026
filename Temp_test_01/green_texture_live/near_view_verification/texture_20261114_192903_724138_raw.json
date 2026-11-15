@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "bbox_xywh": [
+      438,
+      202,
+      89,
+      147
+    ],
+    "axis_width_px": 89,
+    "axis_height_px": 147,
+    "axis_w_over_h": 0.6054421768707483,
+    "oriented_width_px": 79.28982543945312,
+    "oriented_height_px": 146.87393188476562,
+    "oriented_w_over_h": 0.5398495459470803,
+    "oriented_h_over_w": 1.8523679560490485,
+    "contour_area_px": 9714.0,
+    "rectangle_fill": 0.8341341773687313,
+    "polygon_vertices": 5,
+    "outline": "POLYGON-5",
+    "touches_image_border": false,
+    "base_v_found": true,
+    "base_geometry_ratio": 0.33180150440642947,
+    "base_corner_points": [
+      [
+        438,
+        323
+      ],
+      [
+        471,
+        348
+      ],
+      [
+        504,
+        334
+      ]
+    ],
+    "classification_ratio": 0.33180150440642947,
+    "decision_reason": "two_face_base",
+    "side_clip_allowed": false,
+    "decision": "TALL-TEXTURE",
+    "changed_pixels": 10421
+  }
+]

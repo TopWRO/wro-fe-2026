@@ -1,0 +1,26 @@
+{
+  "analysis_ms": {
+    "mean": 27.33440666925162,
+    "median": 27.180250006495044,
+    "p95": 29.19447000604123
+  },
+  "height_render_ms": {
+    "mean": 2.2443766589276493,
+    "median": 2.2979999775998294,
+    "p95": 2.5794149900320913
+  },
+  "frame_processing_ms": {
+    "mean": 29.57878332817927,
+    "median": 29.54705004231073,
+    "p95": 31.363654989399947
+  },
+  "frames": 30,
+  "platform": "win32",
+  "opencv": "5.0.0",
+  "image_shape": [
+    480,
+    640,
+    3
+  ],
+  "capture_display_disk_excluded": true
+}

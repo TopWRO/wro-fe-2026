@@ -1,0 +1,95 @@
+{
+  "source": "C:\\Users\\xiaoy\\Desktop\\stand\\texture_20261114_210357_844538_raw.png",
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3,
+    "weak_s_min": 55,
+    "weak_v_min": 10,
+    "grow_pixels": 4
+  },
+  "rules": {
+    "model_margin": 0.15,
+    "edge_pixels": 2,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "switch_frames": 5
+  },
+  "model": "102-photo area/rotated-box-ratio RBF; 36 support vectors",
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        388,
+        187,
+        226,
+        203
+      ],
+      "shape_bbox_xywh": [
+        392,
+        188,
+        221,
+        201
+      ],
+      "shape_from_strong_core": true,
+      "axis_width_px": 221,
+      "axis_height_px": 201,
+      "axis_w_over_h": 1.099502487562189,
+      "oriented_width_px": 218.8102569580078,
+      "oriented_height_px": 196.30581665039062,
+      "oriented_w_over_h": 1.1146397019284269,
+      "oriented_h_over_w": 0.89715088944877,
+      "contour_area_px": 31096.0,
+      "rectangle_fill": 0.7239418500520126,
+      "polygon_vertices": 9,
+      "outline": "IRREGULAR/ROUND",
+      "touches_image_border": false,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          444,
+          188
+        ],
+        [
+          564,
+          213
+        ],
+        [
+          610,
+          323
+        ],
+        [
+          392,
+          366
+        ]
+      ],
+      "edge_top_width_px": 122.57650756835938,
+      "edge_bottom_width_px": 222.2003631591797,
+      "edge_left_height_px": 185.4400177001953,
+      "edge_right_height_px": 119.23086547851562,
+      "average_width_px": 172.38843536376953,
+      "average_height_px": 152.33544158935547,
+      "average_w_over_h": 1.1316370869785517,
+      "average_h_over_w": 0.8836755276994146,
+      "quad_fit_fraction": 0.7580099471460422,
+      "model_area_pixels": 32267,
+      "model_area_fraction": 0.10503580729166667,
+      "model_label": "stand",
+      "model_margin": 0.9994962627160389,
+      "model_outside_training_range": false,
+      "classification_ratio": 1.1146397019284269,
+      "decision_reason": "learned_area_and_box_ratio",
+      "partial_view": false,
+      "decision": "NORMAL-KEEP",
+      "changed_pixels": 0,
+      "raw_decision": "NORMAL-KEEP",
+      "track_id": 1,
+      "filtered_ratio": 1.1146397019284269,
+      "pending_votes": 0,
+      "decision_held": false
+    }
+  ]
+}

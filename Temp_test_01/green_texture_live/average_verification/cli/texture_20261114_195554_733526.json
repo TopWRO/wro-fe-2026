@@ -1,0 +1,182 @@
+{
+  "source": "C:\\Users\\xiaoy\\Desktop\\captures\\texture_20261114_192848_524294_raw.png",
+  "settings": {
+    "hue_width": 10,
+    "s_min": 100,
+    "v_min": 70,
+    "min_area": 150,
+    "min_size": 12,
+    "kernel": 3
+  },
+  "rules": {
+    "normal_min": 0.44,
+    "normal_max": 0.6,
+    "valid_min": 0.2,
+    "valid_max": 1.6,
+    "edge_pixels": 2,
+    "edge_s_min": 40,
+    "edge_v_min": 15,
+    "measurement": "average"
+  },
+  "targets": [
+    {
+      "id": 1,
+      "bbox_xywh": [
+        37,
+        209,
+        109,
+        163
+      ],
+      "axis_width_px": 109,
+      "axis_height_px": 163,
+      "axis_w_over_h": 0.6687116564417178,
+      "oriented_width_px": 86.05464935302734,
+      "oriented_height_px": 166.3013153076172,
+      "oriented_w_over_h": 0.5174622292905324,
+      "oriented_h_over_w": 1.9325081974988818,
+      "contour_area_px": 11859.0,
+      "rectangle_fill": 0.828663186358144,
+      "polygon_vertices": 5,
+      "outline": "POLYGON-5",
+      "touches_image_border": false,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          40,
+          215
+        ],
+        [
+          123,
+          212
+        ],
+        [
+          145,
+          342
+        ],
+        [
+          76,
+          356
+        ]
+      ],
+      "edge_top_width_px": 83.05419921875,
+      "edge_bottom_width_px": 70.40596771240234,
+      "edge_left_height_px": 145.523193359375,
+      "edge_right_height_px": 131.84840393066406,
+      "average_width_px": 76.73008346557617,
+      "average_height_px": 138.68579864501953,
+      "average_w_over_h": 0.5532656134603562,
+      "average_h_over_w": 1.807450121010736,
+      "quad_fit_fraction": 0.8535637673533817,
+      "classification_ratio": 0.5532656134603562,
+      "decision_reason": "average_opposite_edges",
+      "decision": "NORMAL-KEEP",
+      "changed_pixels": 0
+    },
+    {
+      "id": 2,
+      "bbox_xywh": [
+        256,
+        236,
+        48,
+        87
+      ],
+      "axis_width_px": 48,
+      "axis_height_px": 87,
+      "axis_w_over_h": 0.5517241379310345,
+      "oriented_width_px": 46.02001953125,
+      "oriented_height_px": 87.20803833007812,
+      "oriented_w_over_h": 0.5277038724006896,
+      "oriented_h_over_w": 1.8950022016148713,
+      "contour_area_px": 3467.5,
+      "rectangle_fill": 0.8639988284179336,
+      "polygon_vertices": 7,
+      "outline": "IRREGULAR/ROUND",
+      "touches_image_border": false,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          256,
+          245
+        ],
+        [
+          300,
+          238
+        ],
+        [
+          296,
+          322
+        ],
+        [
+          263,
+          322
+        ]
+      ],
+      "edge_top_width_px": 44.55333709716797,
+      "edge_bottom_width_px": 33.0,
+      "edge_left_height_px": 77.3175277709961,
+      "edge_right_height_px": 84.09518432617188,
+      "average_width_px": 38.776668548583984,
+      "average_height_px": 80.70635604858398,
+      "average_w_over_h": 0.4804661051137165,
+      "average_h_over_w": 2.081312270224182,
+      "quad_fit_fraction": 0.8289719626168224,
+      "classification_ratio": 0.4804661051137165,
+      "decision_reason": "average_opposite_edges",
+      "decision": "NORMAL-KEEP",
+      "changed_pixels": 0
+    },
+    {
+      "id": 3,
+      "bbox_xywh": [
+        400,
+        254,
+        43,
+        42
+      ],
+      "axis_width_px": 43,
+      "axis_height_px": 42,
+      "axis_w_over_h": 1.0238095238095237,
+      "oriented_width_px": 42.0,
+      "oriented_height_px": 41.0,
+      "oriented_w_over_h": 1.024390243902439,
+      "oriented_h_over_w": 0.9761904761904762,
+      "contour_area_px": 1520.5,
+      "rectangle_fill": 0.8829849012775842,
+      "polygon_vertices": 8,
+      "outline": "IRREGULAR/ROUND",
+      "touches_image_border": false,
+      "average_quad_valid": true,
+      "average_quad_points": [
+        [
+          401,
+          254
+        ],
+        [
+          442,
+          265
+        ],
+        [
+          438,
+          295
+        ],
+        [
+          405,
+          292
+        ]
+      ],
+      "edge_top_width_px": 42.44997024536133,
+      "edge_bottom_width_px": 33.13608169555664,
+      "edge_left_height_px": 38.20994567871094,
+      "edge_right_height_px": 30.265491485595703,
+      "average_width_px": 37.793025970458984,
+      "average_height_px": 34.23771858215332,
+      "average_w_over_h": 1.1038418310429976,
+      "average_h_over_w": 0.9059268926736727,
+      "quad_fit_fraction": 0.7982233502538071,
+      "classification_ratio": 1.1038418310429976,
+      "decision_reason": "average_opposite_edges",
+      "decision": "SHORT-TEXTURE",
+      "changed_pixels": 1775
+    }
+  ]
+}

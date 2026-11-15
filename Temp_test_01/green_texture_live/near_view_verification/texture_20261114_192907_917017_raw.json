@@ -1,0 +1,73 @@
+[
+  {
+    "id": 1,
+    "bbox_xywh": [
+      9,
+      342,
+      57,
+      17
+    ],
+    "axis_width_px": 57,
+    "axis_height_px": 17,
+    "axis_w_over_h": 3.3529411764705883,
+    "oriented_width_px": 57.981815338134766,
+    "oriented_height_px": 9.488375663757324,
+    "oriented_w_over_h": 6.110826277632268,
+    "oriented_h_over_w": 0.1636439909379105,
+    "contour_area_px": 413.5,
+    "rectangle_fill": 0.7516087623057123,
+    "polygon_vertices": 4,
+    "outline": "QUAD",
+    "touches_image_border": false,
+    "base_v_found": false,
+    "base_geometry_ratio": null,
+    "base_corner_points": [],
+    "classification_ratio": 6.110826277632268,
+    "decision_reason": "clipped_or_invalid",
+    "side_clip_allowed": false,
+    "decision": "UNKNOWN-KEEP",
+    "changed_pixels": 0
+  },
+  {
+    "id": 2,
+    "bbox_xywh": [
+      517,
+      206,
+      106,
+      159
+    ],
+    "axis_width_px": 106,
+    "axis_height_px": 159,
+    "axis_w_over_h": 0.6666666666666666,
+    "oriented_width_px": 83.58586883544922,
+    "oriented_height_px": 161.57725524902344,
+    "oriented_w_over_h": 0.5173120975884037,
+    "oriented_h_over_w": 1.933069040259801,
+    "contour_area_px": 11463.0,
+    "rectangle_fill": 0.8487605878236205,
+    "polygon_vertices": 5,
+    "outline": "POLYGON-5",
+    "touches_image_border": false,
+    "base_v_found": true,
+    "base_geometry_ratio": 0.32551879865573946,
+    "base_corner_points": [
+      [
+        517,
+        338
+      ],
+      [
+        551,
+        364
+      ],
+      [
+        588,
+        348
+      ]
+    ],
+    "classification_ratio": 0.32551879865573946,
+    "decision_reason": "two_face_base",
+    "side_clip_allowed": false,
+    "decision": "TALL-TEXTURE",
+    "changed_pixels": 12283
+  }
+]
