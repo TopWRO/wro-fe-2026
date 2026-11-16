@@ -34,7 +34,7 @@ import cv2
 
 import numpy as np
 
-# Consecutive complete-view frames needed before one target can change color.
+# Ordinary color decisions act every frame. This only qualifies side-edge protection.
 SWAP_CONFIRM_FRAMES = 5
 
 @dataclass
@@ -106,7 +106,7 @@ def supported_edge_fragment(contour, bbox, shape, edge_history):
         return False
     x,y,w,h = bbox
     fh,fw = shape[:2]
-    if not (x == 0 or y == 0 or x+w == fw or y+h == fh):
+    if not (x == 0 or x+w == fw):
         return False
     local = np.zeros((h,w),np.uint8)
     cv2.drawContours(local,[contour-np.int32([x,y])],-1,255,cv2.FILLED)
@@ -254,12 +254,19 @@ def average_edge_geometry(detection):
             'quad_fit_fraction': fit}
 
 class Stabilizer:
-    """Associate current targets and lock a confirmed color-swap action.
+    """Classify every frame immediately and qualify left/right edge protection.
 
-    Confirmation uses complete-view evidence only. Tall and short both vote for
-    the same action. Once locked, classification flicker or clipping cannot turn
-    that action off while the target remains associated. Unmatched tracks never
-    render historical masks, and expire after max_missed_frames empty updates.
+    Raw classification always controls an ordinary in-frame target: TEXTURE
+    changes color immediately; NORMAL/UNKNOWN keep its current pixels. A run of
+    complete-view TEXTURE frames qualifies protection only at the horizontal
+    image borders. Tall and short both vote for the same swap action. Interior
+    KEEP/UNKNOWN evidence or any missed frame revokes that qualification. Top or
+    bottom clipping alone never activates historical color protection.
+
+    ``swap_locked`` is retained as a compatibility key, but means only that edge
+    protection is ready, not that the target's interior classification is locked.
+    Unmatched tracks never render historical masks, and expire after
+    max_missed_frames empty updates.
     Crossing, merged targets and same-place replacements remain ambiguous for a
     geometry-only tracker; uncertain reacquisition is deliberately conservative.
 
@@ -356,7 +363,8 @@ class Stabilizer:
             return float(.08 + .30*small_overlap)
         return None
 
-    def update_decision(self, track, raw, partial):
+    def update_decision(self, track, raw, partial, horizontal_border=False):
+        track['edge_protection_active'] = False
         if self.legacy_mode:
             proposal = track['state']
             if raw != 'UNKNOWN-KEEP' and not (partial and track['state'] != 'UNKNOWN-KEEP'):
@@ -370,27 +378,36 @@ class Stabilizer:
             else:
                 track['pending'],track['votes'] = None,0
             return
-        if track['swap_locked']:
-            # Both tall and short mean swap; preserve the confirmed action even
-            # if the partially visible model now says normal or uncertain.
+        # Every ordinary observation acts immediately, including the first frame
+        # after a hand/occlusion moves away. Confirmation gates edge protection,
+        # never the ordinary classifier or its current-color rendering.
+        track['state'] = raw
+        if horizontal_border and track['swap_locked']:
             track['state'] = track['confirmed_decision']
+            track['edge_protection_active'] = True
             return
-        if raw.endswith('TEXTURE') and not partial:
+        if partial or horizontal_border:
+            # Partial frames cannot create qualification. Existing complete-view
+            # evidence remains available, but only a side edge can activate it.
+            # In particular top-only clipping still uses this frame's raw class.
+            if not track['swap_locked']:
+                track['confirmation_votes'] = 0
+                track['votes'],track['pending'] = 0,None
+            return
+        if raw.endswith('TEXTURE'):
             track['confirmation_votes'] += 1
             track['votes'] = track['confirmation_votes']
             track['pending'] = 'SWAP'
             if track['confirmation_votes'] >= self.rules.confirm_frames:
                 track['confirmation_votes'] = self.rules.confirm_frames
-                track['state'] = raw
                 track['confirmed_decision'] = raw
                 track['swap_locked'] = bool(self.rules.lock_on_confirm)
                 track['pending'],track['votes'] = None,0
-            else:
-                track['state'] = 'UNKNOWN-KEEP'
         else:
             track['confirmation_votes'] = 0
             track['votes'],track['pending'] = 0,None
-            track['state'] = raw if raw.endswith('KEEP') else 'UNKNOWN-KEEP'
+            track['swap_locked'] = False
+            track['confirmed_decision'] = None
 
     def update(self,detections,rgb,settings,weak=None):
         fh,fw = rgb.shape[:2]
@@ -425,9 +442,10 @@ class Stabilizer:
                 tid=self.next_id;self.next_id+=1
                 t={'bbox':bbox,'center':center,'velocity':np.zeros(2),'missed':0,
                    'prob':current.astype(np.float32)/255,'active':current!=0,'box':ordered_corners(d['box']),
-                   'ratios':deque(maxlen=7),'state':raw if self.legacy_mode else 'UNKNOWN-KEEP',
+                   'ratios':deque(maxlen=7),'state':raw,
                    'pending':None,'votes':0,'source_color':m.get('source_color'),
-                   'confirmation_votes':0,'swap_locked':False,'confirmed_decision':None}
+                   'confirmation_votes':0,'swap_locked':False,'confirmed_decision':None,
+                   'edge_protection_active':False}
                 self.tracks[tid]=t
                 previous_active=current!=0
             else:
@@ -456,15 +474,15 @@ class Stabilizer:
             if ratio is not None and raw!='UNKNOWN-KEEP' and not m['partial_view']:
                 t['ratios'].append(float(ratio))
             measured=float(np.median(t['ratios'])) if t['ratios'] else ratio
-            self.update_decision(t,raw,m['partial_view'])
+            self.update_decision(t,raw,m['partial_view'],horizontal_border=border_x)
             # Keep moving mask memory only where the CURRENT image supports it.
             # Interior holes are already filled. Strong core comes in immediately.
             near=cv2.dilate(current,np.ones((2*self.rules.edge_pixels+1,2*self.rules.edge_pixels+1),np.uint8))
             allowed=(current!=0)|((near!=0)&(weak!=0))
             stable=((t['prob']>=.55)|(previous_active&(t['prob']>=.25))) & allowed
-            if t['swap_locked']:
+            if not self.legacy_mode and t['state'].endswith('TEXTURE'):
                 # Current reliable foreground enters immediately; its leading
-                # edge must not wait several frames for the history EMA.
+                # edge must not wait for confirmation or the history EMA.
                 stable |= current != 0
             t['prob'][~allowed]=0
             t['active']=stable
@@ -475,14 +493,21 @@ class Stabilizer:
             m['filtered_ratio']=measured;m['pending_votes']=t['votes']
             m['decision_held']=bool(t['state']!=raw)
             m['swap_locked']=t['swap_locked']
+            m['edge_protection_ready']=t['swap_locked']
+            m['edge_protection_active']=t['edge_protection_active']
             m['confirmation_votes']=t['confirmation_votes']
             m['confirm_frames_required']=self.rules.confirm_frames
             m['near_image_border']=bool(border_x or border_y)
         for tid,t in self.tracks.items():
-            if tid not in used and t['missed'] > 0 and not t['swap_locked']:
-                # A missed frame interrupts the consecutive confirmation run.
+            if tid not in used and t['missed'] > 0:
+                # A missed frame interrupts qualification, including a previous
+                # ready state, so a replacement cannot inherit edge protection.
                 t['confirmation_votes']=0
-                if not self.legacy_mode:t['votes'],t['pending']=0,None
+                if not self.legacy_mode:
+                    t['votes'],t['pending']=0,None
+                    t['swap_locked']=False
+                    t['confirmed_decision']=None
+                    t['edge_protection_active']=False
         self.tracks={tid:t for tid,t in self.tracks.items() if t['missed']<=self.rules.max_missed_frames}
 
 def write_png(path, pixels):
@@ -537,7 +562,7 @@ def color_masks(rgb, settings, color, history=None, edge_history=None):
             x,y,w,h,area=stats[i]
             if area<settings.min_area:continue
             if min(w,h)<settings.min_size:
-                border = x == 0 or y == 0 or x+w == weak.shape[1] or y+h == weak.shape[0]
+                border = x == 0 or x+w == weak.shape[1]
                 if edge_history is None or not border:continue
                 if not np.any((labels[y:y+h,x:x+w] == i) &
                               (edge_history[y:y+h,x:x+w] != 0)):continue
@@ -596,7 +621,7 @@ def straight_mask(region):
 
 
 def fill_frame_edge(region, observed, rules):
-    """Flatten shallow border notches only along this current target's rows.
+    """Flatten shallow left/right notches along this current target's rows.
 
     The observation must actually touch that side of the frame. A notch wider
     than border_fill_pixels, an entirely absent row or another object is not
@@ -607,23 +632,20 @@ def fill_frame_edge(region, observed, rules):
         return region.copy()
     result = region.copy()
     visible = observed != 0
-    for transpose in (False,True):
-        support = visible.T if transpose else visible
-        target = result.T if transpose else result
-        for reverse in (False,True):
-            current = support[:,::-1] if reverse else support
-            output = target[:,::-1] if reverse else target
-            if not current[:,0].any():
-                continue
-            rows = np.flatnonzero(current.any(axis=1))
-            starts = current[rows].argmax(axis=1)
-            for row,start in zip(rows,starts):
-                if start <= gap:
-                    output[row,:start+1] = 255
-                elif not current[row,0]:
-                    # Do not let an earlier convex-hull straightening step fill
-                    # a much deeper visible background notch at the border.
-                    output[row,:start] = 0
+    for reverse in (False,True):
+        current = visible[:,::-1] if reverse else visible
+        output = result[:,::-1] if reverse else result
+        if not current[:,0].any():
+            continue
+        rows = np.flatnonzero(current.any(axis=1))
+        starts = current[rows].argmax(axis=1)
+        for row,start in zip(rows,starts):
+            if start <= gap:
+                output[row,:start+1] = 255
+            elif not current[row,0]:
+                # Do not let convex-hull straightening fill a much deeper
+                # visible background notch at the left/right border.
+                output[row,:start] = 0
     return result
 
 
@@ -693,7 +715,7 @@ def process_frame(rgb,reference=None,settings=None,rules=None,tracker=None,model
         if region is None:
             region=np.zeros(rgb.shape[:2],np.uint8);cv2.drawContours(region,[d['foreground_contour']],-1,255,-1)
         region=straight_mask(region) if rules.straight_edges else region.copy()
-        if m.get('swap_locked'):
+        if m.get('edge_protection_active'):
             observed=np.zeros(rgb.shape[:2],np.uint8)
             cv2.drawContours(observed,[d['foreground_contour']],-1,255,-1)
             before=cv2.countNonZero(region)
@@ -702,7 +724,7 @@ def process_frame(rgb,reference=None,settings=None,rules=None,tracker=None,model
         region[protected!=0]=0
         # Do not recolor another actual opposite-color object, even when touching.
         region[masks[target]!=0]=0
-        if m.get('swap_locked'):
+        if trackers is not None and not trackers[source].legacy_mode:
             # A thin opposite-color strip may be too narrow to form a detection,
             # but is still current color evidence and must survive edge filling.
             region[weak_masks[target]!=0]=0
@@ -720,12 +742,15 @@ def process_frame(rgb,reference=None,settings=None,rules=None,tracker=None,model
 class PillarColorProcessor:
     """Synchronous DonkeyCar part: native RGB frame in, converted RGB frame out.
 
-    Complete-view tall/short evidence must persist for confirm_frames before a
-    target is changed. The confirmed swap remains locked while that target moves
-    into a clipped border view, even if its later height classification changes.
-    Unconfirmed standard/uncertain targets retain their original color. Both
-    directions read the ORIGINAL frame, preserving the object's visible size and
-    shading; shallow border notches may be extended by border_fill_pixels.
+    Each frame's confident tall/short result changes color immediately; normal
+    or uncertain results retain the original color. There is no initial waiting
+    period and no permanent full-view lock, so a target can be recognized again
+    immediately after occlusion or an earlier uncertain classification.
+
+    Consecutive complete-view swap results qualify side-edge protection only.
+    Once qualified, a target reaching the left/right border can retain its swap
+    despite clipped height evidence, with shallow notches extended by at most
+    border_fill_pixels. Both directions read the ORIGINAL frame.
 
     The recorder must call this before resizing 320x240 capture frames for its Tub.
     Tracking continues between frames; create one instance for a recording run.
@@ -875,7 +900,7 @@ def build_parser(default_rules=None):
     p.add_argument('--model-margin',type=float,default=rules.model_margin)
     p.add_argument('--switch-frames',type=int,default=rules.switch_frames)
     p.add_argument('--confirm-frames',type=int,default=rules.confirm_frames,
-                   help='Consecutive complete-view swap observations before locking (default: 5)')
+                   help='Consecutive complete-view swaps to qualify side-edge protection only (default: 5)')
     p.add_argument('--min-area',type=int,default=settings.min_area);p.add_argument('--min-size',type=int,default=settings.min_size)
     p.add_argument('--grow-pixels',type=int,default=settings.grow_pixels)
     p.add_argument('--no-straight-edges',action='store_true',default=not rules.straight_edges)

@@ -282,7 +282,14 @@ class TemporalAndBorderChecks(unittest.TestCase):
         self.assertTrue(selected.any())
         self.assertGreater(float(opposite[selected].mean()), 0.9)
 
-    def test_default_requires_five_consistent_frames_in_both_directions(self):
+    def assert_edge_gate(self, part, ready, active=False):
+        self.assertEqual(len(part.last_detections), 1)
+        metrics = part.last_detections[0]["metrics"]
+        self.assertEqual(bool(metrics.get("edge_protection_ready",
+                                          metrics.get("swap_locked"))), ready)
+        self.assertEqual(bool(metrics.get("edge_protection_active")), active)
+
+    def test_first_frame_swaps_and_five_frames_only_arm_edge_protection(self):
         for color in ("red", "green"):
             with self.subTest(color=color), \
                     patch.object(processor, "infer_exported", return_value=("tall", 1.0)):
@@ -291,11 +298,8 @@ class TemporalAndBorderChecks(unittest.TestCase):
                 rgb = pillar(color)
                 for number in range(1, 6):
                     out = part.run(rgb)
-                    if number < 5:
-                        np.testing.assert_array_equal(out, rgb)
-                        self.assertFalse(part.last_changed_mask.any())
-                    else:
-                        self.assert_swapped(rgb, out, color)
+                    self.assert_swapped(rgb, out, color)
+                    self.assert_edge_gate(part, ready=number >= 5)
 
     def test_tall_and_low_votes_confirm_the_same_swap_action(self):
         for color in ("red", "green"):
@@ -306,9 +310,8 @@ class TemporalAndBorderChecks(unittest.TestCase):
                 for number, label in enumerate(("tall", "low", "tall", "low", "tall"), 1):
                     infer.return_value = label, 1.0
                     out = part.run(rgb)
-                    if number < 5:
-                        np.testing.assert_array_equal(out, rgb)
-                self.assert_swapped(rgb, out, color)
+                    self.assert_swapped(rgb, out, color)
+                    self.assert_edge_gate(part, ready=number >= 5)
 
     def test_confirmed_swap_survives_growth_and_both_clipped_edges(self):
         left_path = ((52, 63, 46, 114), (40, 48, 58, 144),
@@ -330,7 +333,9 @@ class TemporalAndBorderChecks(unittest.TestCase):
                         if edge == "right":
                             x, y, width, height = box
                             box = (320 - x - width, y, width, height)
-                        infer.return_value = ("stand", 1.0) if index % 2 == 0 else ("tall", 0.0)
+                        # Interior frames still use raw classification. Keep
+                        # positive evidence until the target reaches a side.
+                        infer.return_value = ("tall", 1.0) if index < 4 else ("stand", 1.0)
                         rgb = pillar(color, box)
                         unchanged = rgb.copy()
                         out = part.run(rgb)
@@ -340,20 +345,30 @@ class TemporalAndBorderChecks(unittest.TestCase):
                         np.testing.assert_array_equal(rgb, unchanged)
                         np.testing.assert_array_equal(
                             out[part.last_changed_mask == 0], rgb[part.last_changed_mask == 0])
+                    self.assert_edge_gate(part, ready=True, active=True)
+                    infer.return_value = "tall", 0.0
+                    self.assert_swapped(rgb, part.run(rgb), color)
+                    self.assert_edge_gate(part, ready=True, active=True)
 
-    def test_unconfirmed_partial_target_does_not_lock_or_change_color(self):
+    def test_unarmed_partial_target_uses_raw_classification_without_edge_fill(self):
         for color in ("red", "green"):
             for x in (0, 290):
                 with self.subTest(color=color, x=x), \
-                        patch.object(processor, "infer_exported", return_value=("tall", 1.0)):
+                        patch.object(processor, "infer_exported", return_value=("tall", 1.0)) as infer:
                     part = processor.PillarColorProcessor()
                     rgb = pillar(color, (x, 50, 50, 160))
                     for _ in range(9):
                         out = part.run(rgb)
-                        np.testing.assert_array_equal(out, rgb)
-                        self.assertFalse(part.last_changed_mask.any())
+                        self.assert_swapped(rgb, out, color)
+                        self.assert_edge_gate(part, ready=False, active=False)
+                        self.assertEqual(part.last_detections[0]["metrics"].get(
+                            "border_fill_pixels_added", 0), 0)
+                    for negative in (("stand", 1.0), ("tall", 0.0)):
+                        infer.return_value = negative
+                        np.testing.assert_array_equal(part.run(rgb), rgb)
+                        self.assert_edge_gate(part, ready=False, active=False)
 
-    def test_one_frame_special_misclassification_does_not_change_standard(self):
+    def test_single_positive_frame_swaps_immediately_but_does_not_arm_gate(self):
         for color in ("red", "green"):
             with self.subTest(color=color), patch.object(processor, "infer_exported") as infer:
                 part = processor.PillarColorProcessor()
@@ -361,8 +376,113 @@ class TemporalAndBorderChecks(unittest.TestCase):
                 for label in ("stand", "stand", "stand", "tall",
                               "stand", "stand", "stand", "stand", "stand", "stand"):
                     infer.return_value = label, 1.0
+                    out = part.run(rgb)
+                    if label == "tall":
+                        self.assert_swapped(rgb, out, color)
+                    else:
+                        np.testing.assert_array_equal(out, rgb)
+                        self.assertFalse(part.last_changed_mask.any())
+                    self.assert_edge_gate(part, ready=False)
+
+    def test_first_special_after_ten_normal_or_unknown_frames_swaps_immediately(self):
+        for color in ("red", "green"):
+            for negative in (("stand", 1.0), ("tall", 0.0)):
+                with self.subTest(color=color, initial=negative), \
+                        patch.object(processor, "infer_exported", return_value=negative) as infer:
+                    part = processor.PillarColorProcessor()
+                    rgb = pillar(color)
+                    for _ in range(10):
+                        np.testing.assert_array_equal(part.run(rgb), rgb)
+                        self.assert_edge_gate(part, ready=False)
+                    infer.return_value = "tall", 1.0
+                    for number in range(1, 6):
+                        self.assert_swapped(rgb, part.run(rgb), color)
+                        self.assert_edge_gate(part, ready=number >= 5)
+
+    def test_full_view_negative_revokes_gate_and_does_not_leak_to_next_edge(self):
+        for color in ("red", "green"):
+            for negative in (("stand", 1.0), ("tall", 0.0)):
+                with self.subTest(color=color, negative=negative), \
+                        patch.object(processor, "infer_exported", return_value=("tall", 1.0)) as infer:
+                    part = processor.PillarColorProcessor()
+                    rgb = pillar(color, (10, 50, 80, 140))
+                    for _ in range(5):
+                        self.assert_swapped(rgb, part.run(rgb), color)
+                    self.assert_edge_gate(part, ready=True)
+                    infer.return_value = negative
                     np.testing.assert_array_equal(part.run(rgb), rgb)
-                    self.assertFalse(part.last_changed_mask.any())
+                    self.assert_edge_gate(part, ready=False)
+                    # A revoked gate cannot force a partially visible target.
+                    clipped = pillar(color, (0, 50, 80, 140))
+                    np.testing.assert_array_equal(part.run(clipped), clipped)
+                    self.assert_edge_gate(part, ready=False)
+                    # It still returns to the normal instantaneous swap path.
+                    infer.return_value = "tall", 1.0
+                    self.assert_swapped(clipped, part.run(clipped), color)
+                    self.assert_edge_gate(part, ready=False)
+
+    def test_full_view_stand_or_unknown_stops_swap_and_next_positive_recovers(self):
+        for color in ("red", "green"):
+            for negative in (("stand", 1.0), ("tall", 0.0)):
+                with self.subTest(color=color, negative=negative), \
+                        patch.object(processor, "infer_exported", return_value=("tall", 1.0)) as infer:
+                    part = processor.PillarColorProcessor()
+                    rgb = pillar(color)
+                    for _ in range(5):
+                        part.run(rgb)
+                    self.assert_edge_gate(part, ready=True)
+                    infer.return_value = negative
+                    np.testing.assert_array_equal(part.run(rgb), rgb)
+                    self.assert_edge_gate(part, ready=False)
+                    infer.return_value = "low", 1.0
+                    self.assert_swapped(rgb, part.run(rgb), color)
+                    self.assert_edge_gate(part, ready=False)
+
+    def test_top_only_clipping_does_not_force_historical_swap(self):
+        for color in ("red", "green"):
+            with self.subTest(color=color), \
+                    patch.object(processor, "infer_exported", return_value=("tall", 1.0)) as infer:
+                part = processor.PillarColorProcessor()
+                rgb = pillar(color, (140, 10, 40, 100))
+                for _ in range(5):
+                    part.run(rgb)
+                self.assert_edge_gate(part, ready=True)
+                top_only = pillar(color, (140, -10, 40, 100))
+                for negative in (("stand", 1.0), ("tall", 0.0)):
+                    infer.return_value = negative
+                    np.testing.assert_array_equal(part.run(top_only), top_only)
+                    self.assertFalse(part.last_detections[0]["metrics"].get(
+                        "edge_protection_active", False))
+                    self.assertEqual(part.last_detections[0]["metrics"].get(
+                        "border_fill_pixels_added", 0), 0)
+                infer.return_value = "tall", 1.0
+                self.assert_swapped(top_only, part.run(top_only), color)
+                self.assertFalse(part.last_detections[0]["metrics"].get(
+                    "edge_protection_active", False))
+
+    def test_hand_and_blank_occlusion_recover_on_first_visible_frame(self):
+        for color in ("red", "green"):
+            for kind in ("blank", "hand"):
+                for duration in (1, 3, 9):
+                    with self.subTest(color=color, occluder=kind, duration=duration), \
+                            patch.object(processor, "infer_exported", return_value=("tall", 1.0)):
+                        part = processor.PillarColorProcessor()
+                        rgb = pillar(color)
+                        for _ in range(5):
+                            part.run(rgb)
+                        self.assert_edge_gate(part, ready=True)
+                        covered = np.full((240, 320, 3), 220, np.uint8)
+                        if kind == "hand":
+                            covered[35:200, 30:150] = (160, 145, 130)
+                        for _ in range(duration):
+                            np.testing.assert_array_equal(part.run(covered), covered)
+                            self.assertFalse(part.last_changed_mask.any())
+                        # The five-frame rule arms edge protection only. It
+                        # must not delay ordinary classification after loss.
+                        self.assert_swapped(rgb, part.run(rgb), color)
+                        self.assert_edge_gate(part, ready=False)
+                        self.assertFalse(part.last_detections[0]["metrics"].get(
+                            "edge_protection_active", False))
 
     def test_missing_frames_never_render_ghost_and_timeout_clears_lock(self):
         for color in ("red", "green"):
