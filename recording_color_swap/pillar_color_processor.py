@@ -34,6 +34,9 @@ import cv2
 
 import numpy as np
 
+# Consecutive complete-view frames needed before one target can change color.
+SWAP_CONFIRM_FRAMES = 5
+
 @dataclass
 class Settings:
     # Same red HSV defaults as Recording_N02.py, including the hue wraparound.
@@ -92,7 +95,26 @@ def seeded_red_mask(rgb, settings, history=None):
     cv2.drawContours(filled,contours,-1,255,cv2.FILLED)
     return filled, weak, strong
 
-def detect_red(rgb, settings, history=None, prepared=None):
+def supported_edge_fragment(contour, bbox, shape, edge_history):
+    """Current border pixels may extend an already locked target to its exit.
+
+    History is only an association hint: an actual same-color contour must still
+    exist now. Small interior noise and newly appearing border targets do not
+    qualify for the reduced width/area thresholds.
+    """
+    if edge_history is None:
+        return False
+    x,y,w,h = bbox
+    fh,fw = shape[:2]
+    if not (x == 0 or y == 0 or x+w == fw or y+h == fh):
+        return False
+    local = np.zeros((h,w),np.uint8)
+    cv2.drawContours(local,[contour-np.int32([x,y])],-1,255,cv2.FILLED)
+    overlap = (local != 0) & (edge_history[y:y+h,x:x+w] != 0)
+    return bool(np.count_nonzero(overlap) >= max(1, .30*np.count_nonzero(local)))
+
+
+def detect_red(rgb, settings, history=None, prepared=None, edge_history=None):
     """Return cleaned mask and up to twenty largest independent red regions.
 
     Do not swap RGB channels, resize the frame, or merge distant components.
@@ -115,7 +137,12 @@ def detect_red(rgb, settings, history=None, prepared=None):
         foreground = contour
         area = float(cv2.contourArea(contour))
         x, y, w, h = cv2.boundingRect(contour)
-        if area < settings.min_area or min(w, h) < settings.min_size:
+        edge_fragment = supported_edge_fragment(contour,(x,y,w,h),rgb.shape,edge_history)
+        if edge_fragment:
+            # A final one-pixel-wide sliver has zero geometric contour area,
+            # but still contains real pixels belonging to the locked target.
+            area = max(area,float(cv2.countNonZero(mask[y:y+h,x:x+w])))
+        if area < settings.min_area or (min(w, h) < settings.min_size and not edge_fragment):
             continue
         foreground_bbox=[int(x),int(y),int(w),int(h)]
         matches=[entry for entry in core_info if cv2.pointPolygonTest(foreground,entry[2],False)>=0]
@@ -128,7 +155,11 @@ def detect_red(rgb, settings, history=None, prepared=None):
         edges = np.roll(box, -1, axis=0) - box
         lengths = np.linalg.norm(edges, axis=1)
         if min(lengths) < 1:
-            continue
+            if not edge_fragment:
+                continue
+            box = np.float32([[x,y],[x+w,y],[x+w,y+h],[x,y+h]])
+            edges = np.roll(box,-1,axis=0)-box
+            lengths = np.linalg.norm(edges,axis=1)
         # Preserve screen-horizontal width and screen-vertical height. Sorting
         # edges into long/short would lose W/H>1 for the short, wide model.
         horizontal = int(np.argmax(np.abs(edges[:, 0]) / lengths))
@@ -169,6 +200,11 @@ class Rules:
     edge_v_min: int = 15
     switch_frames: int = 5
     straight_edges: bool = True
+    confirm_frames: int = SWAP_CONFIRM_FRAMES
+    lock_on_confirm: bool = True
+    max_missed_frames: int = 6
+    border_margin: int = 3
+    border_fill_pixels: int = 4
 
 def ordered_corners(box):
     top, bottom = np.array_split(box[np.argsort(box[:, 1])], 2)
@@ -218,25 +254,39 @@ def average_edge_geometry(detection):
             'quad_fit_fraction': fit}
 
 class Stabilizer:
-    """Greedy spatial association, motion-aligned masks and confirmed model class changes.
+    """Associate current targets and lock a confirmed color-swap action.
 
-    Tracks never render unmatched historical masks, avoiding green ghost trails.
-    It is not an occlusion-aware identity tracker; crossing/merged objects can
-    be ambiguous and are part of the real-video validation still needed.
+    Confirmation uses complete-view evidence only. Tall and short both vote for
+    the same action. Once locked, classification flicker or clipping cannot turn
+    that action off while the target remains associated. Unmatched tracks never
+    render historical masks, and expire after max_missed_frames empty updates.
+    Crossing, merged targets and same-place replacements remain ambiguous for a
+    geometry-only tracker; uncertain reacquisition is deliberately conservative.
+
+    Rules(confirm_frames=1, lock_on_confirm=False) selects the original state,
+    association and mask rules for algorithm-equivalence checks.
     """
     def __init__(self, rules):
+        if rules.confirm_frames < 1:
+            raise ValueError('confirm_frames must be at least 1')
+        if rules.max_missed_frames < 0 or rules.border_margin < 0:
+            raise ValueError('max_missed_frames and border_margin must be nonnegative')
         self.rules = rules
+        self.legacy_mode = rules.confirm_frames == 1 and not rules.lock_on_confirm
         self.reset()
 
     def reset(self):
         self.tracks, self.next_id = {}, 1
         self.last_mask = None
 
-    def hint(self, shape):
+    def hint(self, shape, locked_only=False):
         hint = np.zeros(shape[:2],np.uint8)
         for t in self.tracks.values():
-            if t['missed'] <= 3:
-                dx,dy = t['velocity']
+            if locked_only and not t.get('swap_locked', False):
+                continue
+            if t['missed'] <= min(3, self.rules.max_missed_frames):
+                steps = 1 if self.legacy_mode else t['missed'] + 1
+                dx,dy = t['velocity'] * steps
                 matrix = np.float32([[1,0,dx],[0,1,dy]])
                 predicted = cv2.warpAffine(t['active'].astype(np.uint8)*255,
                                           matrix,(shape[1],shape[0]))
@@ -255,16 +305,108 @@ class Stabilizer:
             return None
         return float(iou - .25*distance/scale)
 
+    @staticmethod
+    def clipped_box(bbox, width, height):
+        x,y,w,h = bbox
+        left,top = max(0., x),max(0., y)
+        right,bottom = min(float(width), x+w),min(float(height), y+h)
+        if right <= left or bottom <= top:
+            return None
+        return [left,top,right-left,bottom-top]
+
+    def border_axes(self, bbox, width, height):
+        x,y,w,h = bbox
+        margin = self.rules.border_margin
+        return (x <= margin or x+w >= width-margin,
+                y <= margin or y+h >= height-margin)
+
+    def current_association(self, bbox, predicted, track, width, height):
+        """Bounded matching permits an existing target to narrow at the border."""
+        clipped = self.clipped_box(predicted, width, height)
+        if clipped is None:
+            return None
+        ax,ay,aw,ah = bbox
+        bx,by,bw,bh = clipped
+        ix = max(0., min(ax+aw,bx+bw)-max(ax,bx))
+        iy = max(0., min(ay+ah,by+bh)-max(ay,by))
+        inter = ix * iy
+        small_overlap = inter / max(min(aw*ah,bw*bh), 1.)
+        # A nearby newly appearing object must not inherit a former target's lock
+        # simply because its center is close. After a gap demand real overlap.
+        if track['swap_locked'] and (small_overlap < .15 or
+                (track['missed'] > 0 and small_overlap < .50)):
+            return None
+        margin = self.rules.border_margin
+        same_x_edge = ((ax <= margin and bx <= margin) or
+                       (ax+aw >= width-margin and bx+bw >= width-margin))
+        same_y_edge = ((ay <= margin and by <= margin) or
+                       (ay+ah >= height-margin and by+bh >= height-margin))
+        old_x_edge,old_y_edge = self.border_axes(track['bbox'], width, height)
+        if track['swap_locked'] and track['missed'] > 0:
+            if (old_x_edge and not same_x_edge) or (old_y_edge and not same_y_edge):
+                return None
+        score = self.association(bbox, clipped)
+        if score is not None:
+            return score
+        # Only relax the clipped dimension. The other dimension and the actual
+        # observed overlap still have to describe the same visible target.
+        side_continuation = same_x_edge and min(ah,bh)/max(ah,bh,1.) >= .50 and iy/max(min(ah,bh),1.) >= .75
+        end_continuation = same_y_edge and min(aw,bw)/max(aw,bw,1.) >= .50 and ix/max(min(aw,bw),1.) >= .75
+        if (side_continuation or end_continuation) and small_overlap >= .70 and aw*ah <= 4*bw*bh:
+            return float(.08 + .30*small_overlap)
+        return None
+
+    def update_decision(self, track, raw, partial):
+        if self.legacy_mode:
+            proposal = track['state']
+            if raw != 'UNKNOWN-KEEP' and not (partial and track['state'] != 'UNKNOWN-KEEP'):
+                proposal = raw
+            if proposal != track['state']:
+                track['votes'] = track['votes']+1 if track['pending'] == proposal else 1
+                track['pending'] = proposal
+                if track['votes'] >= self.rules.switch_frames:
+                    track['state'] = proposal
+                    track['pending'],track['votes'] = None,0
+            else:
+                track['pending'],track['votes'] = None,0
+            return
+        if track['swap_locked']:
+            # Both tall and short mean swap; preserve the confirmed action even
+            # if the partially visible model now says normal or uncertain.
+            track['state'] = track['confirmed_decision']
+            return
+        if raw.endswith('TEXTURE') and not partial:
+            track['confirmation_votes'] += 1
+            track['votes'] = track['confirmation_votes']
+            track['pending'] = 'SWAP'
+            if track['confirmation_votes'] >= self.rules.confirm_frames:
+                track['confirmation_votes'] = self.rules.confirm_frames
+                track['state'] = raw
+                track['confirmed_decision'] = raw
+                track['swap_locked'] = bool(self.rules.lock_on_confirm)
+                track['pending'],track['votes'] = None,0
+            else:
+                track['state'] = 'UNKNOWN-KEEP'
+        else:
+            track['confirmation_votes'] = 0
+            track['votes'],track['pending'] = 0,None
+            track['state'] = raw if raw.endswith('KEEP') else 'UNKNOWN-KEEP'
+
     def update(self,detections,rgb,settings,weak=None):
         fh,fw = rgb.shape[:2]
         if weak is None:_,weak,_ = seeded_red_mask(rgb,settings)
         pairs=[]
         for i,d in enumerate(detections):
             for tid,t in self.tracks.items():
+                if t['missed'] > self.rules.max_missed_frames:
+                    continue
+                if t.get('source_color') != d['metrics'].get('source_color'):
+                    continue
                 predicted = list(t['bbox'])
                 predicted[0] += t['velocity'][0]*(t['missed']+1)
                 predicted[1] += t['velocity'][1]*(t['missed']+1)
-                score = self.association(d['metrics']['bbox_xywh'],predicted)
+                score = (self.association(d['metrics']['bbox_xywh'],predicted) if self.legacy_mode else
+                         self.current_association(d['metrics']['bbox_xywh'],predicted,t,fw,fh))
                 if score is not None:pairs.append((score,i,tid))
         assigned,used = {},set()
         for _,i,tid in sorted(pairs,reverse=True):
@@ -276,15 +418,21 @@ class Stabilizer:
             current=np.zeros((fh,fw),np.uint8)
             cv2.drawContours(current,[d['foreground_contour']],-1,255,cv2.FILLED)
             bbox=m['bbox_xywh']; center=np.array([bbox[0]+bbox[2]/2,bbox[1]+bbox[3]/2])
+            border_x,border_y = self.border_axes(bbox,fw,fh)
+            if not self.legacy_mode:
+                m['partial_view'] = bool(m['partial_view'] or border_x or border_y)
             if i not in assigned:
                 tid=self.next_id;self.next_id+=1
                 t={'bbox':bbox,'center':center,'velocity':np.zeros(2),'missed':0,
                    'prob':current.astype(np.float32)/255,'active':current!=0,'box':ordered_corners(d['box']),
-                   'ratios':deque(maxlen=7),'state':raw,'pending':None,'votes':0}
+                   'ratios':deque(maxlen=7),'state':raw if self.legacy_mode else 'UNKNOWN-KEEP',
+                   'pending':None,'votes':0,'source_color':m.get('source_color'),
+                   'confirmation_votes':0,'swap_locked':False,'confirmed_decision':None}
                 self.tracks[tid]=t
                 previous_active=current!=0
             else:
                 tid=assigned[i];t=self.tracks[tid]
+                elapsed = t['missed']
                 delta=center-t['center']
                 # A one-pixel contour protrusion must not move the whole history
                 # mask. Small real motion is absorbed by the current-mask update.
@@ -294,27 +442,30 @@ class Stabilizer:
                 previous_active=cv2.warpAffine(t['active'].astype(np.uint8),matrix,(fw,fh),
                                                flags=cv2.INTER_NEAREST)!=0
                 t['prob']=.65*previous+.35*(current.astype(np.float32)/255)
-                t['velocity']=.5*t['velocity']+.5*delta
+                observed_velocity = delta if self.legacy_mode else delta/max(elapsed,1)
+                t['velocity']=.5*t['velocity']+.5*observed_velocity
+                if not self.legacy_mode:
+                    # A clipped bbox's center changes when its visible width or
+                    # height shrinks. It is not evidence of accelerating motion
+                    # out of view; retain the current sliver until actual loss.
+                    if border_x:t['velocity'][0]=0.
+                    if border_y:t['velocity'][1]=0.
                 shifted=t['box']+delta
                 t['box']=.65*shifted+.35*ordered_corners(d['box'])
                 t['center'],t['bbox'],t['missed']=center,bbox,0
             if ratio is not None and raw!='UNKNOWN-KEEP' and not m['partial_view']:
                 t['ratios'].append(float(ratio))
             measured=float(np.median(t['ratios'])) if t['ratios'] else ratio
-            proposal=t['state']
-            if raw!='UNKNOWN-KEEP' and not (m['partial_view'] and t['state']!='UNKNOWN-KEEP'):
-                proposal=raw  # Model margin gates evidence; no fixed ratio threshold.
-            if proposal!=t['state']:
-                t['votes']=t['votes']+1 if t['pending']==proposal else 1
-                t['pending']=proposal
-                if t['votes']>=self.rules.switch_frames:
-                    t['state']=proposal;t['pending']=None;t['votes']=0
-            else:t['pending']=None;t['votes']=0
+            self.update_decision(t,raw,m['partial_view'])
             # Keep moving mask memory only where the CURRENT image supports it.
             # Interior holes are already filled. Strong core comes in immediately.
             near=cv2.dilate(current,np.ones((2*self.rules.edge_pixels+1,2*self.rules.edge_pixels+1),np.uint8))
             allowed=(current!=0)|((near!=0)&(weak!=0))
             stable=((t['prob']>=.55)|(previous_active&(t['prob']>=.25))) & allowed
+            if t['swap_locked']:
+                # Current reliable foreground enters immediately; its leading
+                # edge must not wait several frames for the history EMA.
+                stable |= current != 0
             t['prob'][~allowed]=0
             t['active']=stable
             d['render_mask']=stable.astype(np.uint8)*255
@@ -323,7 +474,16 @@ class Stabilizer:
             m['raw_decision']=raw;m['decision']=t['state'];m['track_id']=tid
             m['filtered_ratio']=measured;m['pending_votes']=t['votes']
             m['decision_held']=bool(t['state']!=raw)
-        self.tracks={tid:t for tid,t in self.tracks.items() if t['missed']<=6}
+            m['swap_locked']=t['swap_locked']
+            m['confirmation_votes']=t['confirmation_votes']
+            m['confirm_frames_required']=self.rules.confirm_frames
+            m['near_image_border']=bool(border_x or border_y)
+        for tid,t in self.tracks.items():
+            if tid not in used and t['missed'] > 0 and not t['swap_locked']:
+                # A missed frame interrupts the consecutive confirmation run.
+                t['confirmation_votes']=0
+                if not self.legacy_mode:t['votes'],t['pending']=0,None
+        self.tracks={tid:t for tid,t in self.tracks.items() if t['missed']<=self.rules.max_missed_frames}
 
 def write_png(path, pixels):
     ok, encoded = cv2.imencode('.png', pixels)
@@ -353,7 +513,7 @@ PALETTES = json.loads('{"red": {"median_hsv": [177.0, 232.0, 159.0], "standard_p
 
 """Shared extraction/rendering code embedded into the single-file Pi program."""
 
-def color_masks(rgb, settings, color, history=None):
+def color_masks(rgb, settings, color, history=None, edge_history=None):
     hsv=cv2.cvtColor(rgb,cv2.COLOR_RGB2HSV)
     c=rgb.astype(np.float32)
     if color=='red':
@@ -375,7 +535,12 @@ def color_masks(rgb, settings, color, history=None):
         n,labels,stats,_=cv2.connectedComponentsWithStats(seed,8)
         for i in range(1,n):
             x,y,w,h,area=stats[i]
-            if area<settings.min_area or min(w,h)<settings.min_size:continue
+            if area<settings.min_area:continue
+            if min(w,h)<settings.min_size:
+                border = x == 0 or y == 0 or x+w == weak.shape[1] or y+h == weak.shape[0]
+                if edge_history is None or not border:continue
+                if not np.any((labels[y:y+h,x:x+w] == i) &
+                              (edge_history[y:y+h,x:x+w] != 0)):continue
             x0,y0=max(0,x-pad),max(0,y-pad);x1,y1=min(weak.shape[1],x+w+pad),min(weak.shape[0],y+h+pad)
             _,local=cv2.connectedComponents(weak[y0:y1,x0:x1],8)
             hit=np.unique(local[labels[y0:y1,x0:x1]==i]);hit=hit[hit!=0]
@@ -404,10 +569,10 @@ def measure_target(d,shape):
     return m
 
 
-def extract_color(rgb,color,settings=None,history=None):
+def extract_color(rgb,color,settings=None,history=None,edge_history=None):
     settings=settings or Settings()
-    prepared=color_masks(rgb,settings,color,history)
-    _,ds=detect_red(rgb,settings,history,prepared)
+    prepared=color_masks(rgb,settings,color,history,edge_history)
+    _,ds=detect_red(rgb,settings,history,prepared,edge_history=edge_history)
     for d in ds:
         d['metrics']['source_color']=color
         measure_target(d,rgb.shape)
@@ -427,6 +592,38 @@ def straight_mask(region):
     # Never move the top/bottom or width beyond the actual observed bbox.
     x,y,w,h=cv2.boundingRect(region)
     result[:y]=0;result[y+h:]=0;result[:,:x]=0;result[:,x+w:]=0
+    return result
+
+
+def fill_frame_edge(region, observed, rules):
+    """Flatten shallow border notches only along this current target's rows.
+
+    The observation must actually touch that side of the frame. A notch wider
+    than border_fill_pixels, an entirely absent row or another object is not
+    bridged. Use observed rather than the convex hull to retain deep gaps.
+    """
+    gap = int(rules.border_fill_pixels)
+    if gap <= 0:
+        return region.copy()
+    result = region.copy()
+    visible = observed != 0
+    for transpose in (False,True):
+        support = visible.T if transpose else visible
+        target = result.T if transpose else result
+        for reverse in (False,True):
+            current = support[:,::-1] if reverse else support
+            output = target[:,::-1] if reverse else target
+            if not current[:,0].any():
+                continue
+            rows = np.flatnonzero(current.any(axis=1))
+            starts = current[rows].argmax(axis=1)
+            for row,start in zip(rows,starts):
+                if start <= gap:
+                    output[row,:start+1] = 255
+                elif not current[row,0]:
+                    # Do not let an earlier convex-hull straightening step fill
+                    # a much deeper visible background notch at the border.
+                    output[row,:start] = 0
     return result
 
 
@@ -466,11 +663,12 @@ def process_frame(rgb,reference=None,settings=None,rules=None,tracker=None,model
     if rgb.shape!=(240,320,3):raise ValueError('Expected native 320x240 RGB input; got {}'.format(rgb.shape))
     settings=settings or Settings();rules=rules or Rules()
     models=MODELS if models is None else models
-    all_ds=[];masks={};trackers=tracker
+    all_ds=[];masks={};weak_masks={};trackers=tracker
     for color in ['red','green']:
         tr=trackers[color] if trackers is not None else None
         hint=tr.hint(rgb.shape) if tr else None
-        prepared,ds=extract_color(rgb,color,settings,hint)
+        edge_hint=tr.hint(rgb.shape,locked_only=True) if tr else None
+        prepared,ds=extract_color(rgb,color,settings,hint,edge_history=edge_hint)
         for d in ds:
             m=d['metrics'];model=models[color];label,margin=infer_exported(model,m)
             m.update(model_label=label,model_margin=margin,classification_ratio=m['avg_ratio'],
@@ -479,7 +677,7 @@ def process_frame(rgb,reference=None,settings=None,rules=None,tracker=None,model
             m['decision']='UNKNOWN-KEEP' if margin<rules.model_margin else {'tall':'TALL-TEXTURE','stand':'NORMAL-KEEP','low':'SHORT-TEXTURE'}[label]
             m['changed_pixels']=0
         if tr:tr.update(ds,rgb,settings,prepared[1])
-        masks[color]=prepared[0];all_ds+=ds
+        masks[color]=prepared[0];weak_masks[color]=prepared[1];all_ds+=ds
     all_ds.sort(key=lambda d:d['metrics']['bbox_xywh'][0])
     protected=np.zeros(rgb.shape[:2],np.uint8)
     for i,d in enumerate(all_ds,1):
@@ -495,9 +693,19 @@ def process_frame(rgb,reference=None,settings=None,rules=None,tracker=None,model
         if region is None:
             region=np.zeros(rgb.shape[:2],np.uint8);cv2.drawContours(region,[d['foreground_contour']],-1,255,-1)
         region=straight_mask(region) if rules.straight_edges else region.copy()
+        if m.get('swap_locked'):
+            observed=np.zeros(rgb.shape[:2],np.uint8)
+            cv2.drawContours(observed,[d['foreground_contour']],-1,255,-1)
+            before=cv2.countNonZero(region)
+            region=fill_frame_edge(region,observed,rules)
+            m['border_fill_pixels_added']=max(0,cv2.countNonZero(region)-before)
         region[protected!=0]=0
         # Do not recolor another actual opposite-color object, even when touching.
         region[masks[target]!=0]=0
+        if m.get('swap_locked'):
+            # A thin opposite-color strip may be too narrow to form a detection,
+            # but is still current color evidence and must survive edge filling.
+            region[weak_masks[target]!=0]=0
         if not region.any():continue
         result=paint_other_color(rgb,region,source,target,PALETTES if reference is None else reference)
         if result is None:continue
@@ -512,9 +720,12 @@ def process_frame(rgb,reference=None,settings=None,rules=None,tracker=None,model
 class PillarColorProcessor:
     """Synchronous DonkeyCar part: native RGB frame in, converted RGB frame out.
 
-    Standard-height and uncertain targets retain their original color. Confident
-    tall/short targets use the opposite-color palette with the original object's
-    shading, position and observed size. Both directions read the ORIGINAL frame.
+    Complete-view tall/short evidence must persist for confirm_frames before a
+    target is changed. The confirmed swap remains locked while that target moves
+    into a clipped border view, even if its later height classification changes.
+    Unconfirmed standard/uncertain targets retain their original color. Both
+    directions read the ORIGINAL frame, preserving the object's visible size and
+    shading; shallow border notches may be extended by border_fill_pixels.
 
     The recorder must call this before resizing 320x240 capture frames for its Tub.
     Tracking continues between frames; create one instance for a recording run.
@@ -663,6 +874,8 @@ def build_parser(default_rules=None):
     p.add_argument('--output-dir',type=Path,default=Path(__file__).resolve().parent/'captures_color_processor_320x240')
     p.add_argument('--model-margin',type=float,default=rules.model_margin)
     p.add_argument('--switch-frames',type=int,default=rules.switch_frames)
+    p.add_argument('--confirm-frames',type=int,default=rules.confirm_frames,
+                   help='Consecutive complete-view swap observations before locking (default: 5)')
     p.add_argument('--min-area',type=int,default=settings.min_area);p.add_argument('--min-size',type=int,default=settings.min_size)
     p.add_argument('--grow-pixels',type=int,default=settings.grow_pixels)
     p.add_argument('--no-straight-edges',action='store_true',default=not rules.straight_edges)
@@ -673,15 +886,19 @@ def main():
     p=build_parser();args=p.parse_args()
     if not 0<=args.model_margin<=3:p.error('model-margin must be 0..3')
     if not 1<=args.switch_frames<=30:p.error('switch-frames must be 1..30')
+    if not 1<=args.confirm_frames<=30:p.error('confirm-frames must be 1..30')
     if not 1<=args.min_area<=10000 or not 2<=args.min_size<=240:p.error('invalid min-area or min-size')
     if not 0<=args.grow_pixels<=12:p.error('grow-pixels must be 0..12')
-    rules=Rules(model_margin=args.model_margin,switch_frames=args.switch_frames,straight_edges=not args.no_straight_edges)
+    rules=Rules(model_margin=args.model_margin,switch_frames=args.switch_frames,
+                confirm_frames=args.confirm_frames,straight_edges=not args.no_straight_edges)
     settings=Settings(min_area=args.min_area,min_size=args.min_size,grow_pixels=args.grow_pixels)
     print('Running file:',Path(__file__).resolve());print('ACTIVE 320x240 RGB; no height changes; special RED <-> GREEN; standard colors retained')
     print('Rules:',asdict(rules));print('Color detection:',asdict(settings))
     for c in ['red','green']:print(c,'features:',MODELS[c]['features'],'standard reference HSV:',PALETTES[c]['median_hsv'])
     if args.image:
-        rgb=read_rgb(args.image);out,mask,ds=process_frame(rgb,PALETTES,settings,rules,{c:Stabilizer(rules) for c in ['red','green']})
+        # A still image has no temporal history. Keep single-photo diagnostics
+        # instantaneous; the live preview and recording use confirmed tracks.
+        rgb=read_rgb(args.image);out,mask,ds=process_frame(rgb,PALETTES,settings,rules)
         save_result(args.output_dir,rgb,out,mask,ds,PALETTES,settings,rules,str(args.image))
         if not args.no_window:
             try:

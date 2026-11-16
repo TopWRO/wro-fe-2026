@@ -43,6 +43,19 @@ def scene(offset=0):
     return rgb
 
 
+def pillar(color="red", box=(60, 70, 40, 100)):
+    rgb = np.full((240, 320, 3), 220, np.uint8)
+    x, y, width, height = box
+    rgb[max(0, y):min(240, y + height),
+        max(0, x):min(320, x + width)] = (
+            (180, 10, 15) if color == "red" else (12, 100, 30))
+    return rgb
+
+
+def immediate_processor():
+    return processor.PillarColorProcessor(rules=processor.Rules(confirm_frames=1))
+
+
 class FakeVehicle:
     def __init__(self):
         self.parts = []
@@ -177,7 +190,8 @@ def graph_entry(car, output=None, part_type=None):
 
 class ProcessorChecks(unittest.TestCase):
     def test_original_algorithm_equivalence_across_moving_frames(self):
-        new = processor.PillarColorProcessor()
+        new = processor.PillarColorProcessor(
+            rules=processor.Rules(confirm_frames=1, lock_on_confirm=False))
         trackers = {color: original.Stabilizer(original.Rules()) for color in ("red", "green")}
         for index, offset in enumerate((0, 2, 4, 6, 4, 2)):
             rgb = scene(offset)
@@ -188,14 +202,20 @@ class ProcessorChecks(unittest.TestCase):
                 np.testing.assert_array_equal(actual, expected)
                 np.testing.assert_array_equal(new.last_changed_mask, mask)
                 np.testing.assert_array_equal(rgb, unchanged)
-                self.assertEqual([d["metrics"] for d in new.last_detections],
-                                 [d["metrics"] for d in detections])
+                legacy_keys = ("source_color", "bbox_xywh", "model_label",
+                               "model_margin", "decision", "target_color",
+                               "changed_pixels", "render_bbox_xywh")
+                self.assertEqual(
+                    [{key: d["metrics"].get(key) for key in legacy_keys}
+                     for d in new.last_detections],
+                    [{key: d["metrics"].get(key) for key in legacy_keys}
+                     for d in detections])
 
     def test_both_directions_change_without_moving_geometry_or_background(self):
         for label in ("tall", "low"):
             with self.subTest(label=label), \
                     patch.object(processor, "infer_exported", return_value=(label, 1.0)):
-                part = processor.PillarColorProcessor()
+                part = immediate_processor()
                 rgb = scene()
                 saved = rgb.copy()
                 out = part.run(rgb)
@@ -226,7 +246,7 @@ class ProcessorChecks(unittest.TestCase):
             return ("tall" if metrics["source_color"] == "red" else "stand"), 1.0
         with patch.object(processor, "infer_exported", side_effect=classify):
             rgb = scene()
-            part = processor.PillarColorProcessor()
+            part = immediate_processor()
             out = part.run(rgb)
             np.testing.assert_array_equal(out[60:180, 190:230], rgb[60:180, 190:230])
             self.assertGreater(int(out[100, 50, 1]), int(out[100, 50, 0]))
@@ -251,6 +271,214 @@ class ProcessorChecks(unittest.TestCase):
                 part.run(rgb)
         with self.assertRaises(TypeError):
             part.run([1, 2, 3])
+
+
+class TemporalAndBorderChecks(unittest.TestCase):
+    def assert_swapped(self, rgb, out, color):
+        source = (180, 10, 15) if color == "red" else (12, 100, 30)
+        selected = np.all(rgb == source, axis=2)
+        opposite = out[:, :, 1] > out[:, :, 0] if color == "red" else (
+            out[:, :, 0] > out[:, :, 1])
+        self.assertTrue(selected.any())
+        self.assertGreater(float(opposite[selected].mean()), 0.9)
+
+    def test_default_requires_five_consistent_frames_in_both_directions(self):
+        for color in ("red", "green"):
+            with self.subTest(color=color), \
+                    patch.object(processor, "infer_exported", return_value=("tall", 1.0)):
+                part = processor.PillarColorProcessor()
+                self.assertEqual(part.rules.confirm_frames, 5)
+                rgb = pillar(color)
+                for number in range(1, 6):
+                    out = part.run(rgb)
+                    if number < 5:
+                        np.testing.assert_array_equal(out, rgb)
+                        self.assertFalse(part.last_changed_mask.any())
+                    else:
+                        self.assert_swapped(rgb, out, color)
+
+    def test_tall_and_low_votes_confirm_the_same_swap_action(self):
+        for color in ("red", "green"):
+            with self.subTest(color=color), \
+                    patch.object(processor, "infer_exported") as infer:
+                part = processor.PillarColorProcessor()
+                rgb = pillar(color)
+                for number, label in enumerate(("tall", "low", "tall", "low", "tall"), 1):
+                    infer.return_value = label, 1.0
+                    out = part.run(rgb)
+                    if number < 5:
+                        np.testing.assert_array_equal(out, rgb)
+                self.assert_swapped(rgb, out, color)
+
+    def test_confirmed_swap_survives_growth_and_both_clipped_edges(self):
+        left_path = ((52, 63, 46, 114), (40, 48, 58, 144),
+                     (24, 30, 80, 180), (5, 10, 100, 220),
+                     (-20, -15, 135, 270))
+        for color in ("red", "green"):
+            for edge in ("left", "right"):
+                with self.subTest(color=color, edge=edge), \
+                        patch.object(processor, "infer_exported",
+                                     return_value=("tall", 1.0)) as infer:
+                    part = processor.PillarColorProcessor()
+                    first_box = (60, 70, 40, 100) if edge == "left" else (220, 70, 40, 100)
+                    rgb = pillar(color, first_box)
+                    for _ in range(5):
+                        out = part.run(rgb)
+                    self.assert_swapped(rgb, out, color)
+                    track_id = part.last_detections[0]["metrics"]["track_id"]
+                    for index, box in enumerate(left_path):
+                        if edge == "right":
+                            x, y, width, height = box
+                            box = (320 - x - width, y, width, height)
+                        infer.return_value = ("stand", 1.0) if index % 2 == 0 else ("tall", 0.0)
+                        rgb = pillar(color, box)
+                        unchanged = rgb.copy()
+                        out = part.run(rgb)
+                        self.assertEqual(len(part.last_detections), 1)
+                        self.assertEqual(part.last_detections[0]["metrics"]["track_id"], track_id)
+                        self.assert_swapped(rgb, out, color)
+                        np.testing.assert_array_equal(rgb, unchanged)
+                        np.testing.assert_array_equal(
+                            out[part.last_changed_mask == 0], rgb[part.last_changed_mask == 0])
+
+    def test_unconfirmed_partial_target_does_not_lock_or_change_color(self):
+        for color in ("red", "green"):
+            for x in (0, 290):
+                with self.subTest(color=color, x=x), \
+                        patch.object(processor, "infer_exported", return_value=("tall", 1.0)):
+                    part = processor.PillarColorProcessor()
+                    rgb = pillar(color, (x, 50, 50, 160))
+                    for _ in range(9):
+                        out = part.run(rgb)
+                        np.testing.assert_array_equal(out, rgb)
+                        self.assertFalse(part.last_changed_mask.any())
+
+    def test_one_frame_special_misclassification_does_not_change_standard(self):
+        for color in ("red", "green"):
+            with self.subTest(color=color), patch.object(processor, "infer_exported") as infer:
+                part = processor.PillarColorProcessor()
+                rgb = pillar(color)
+                for label in ("stand", "stand", "stand", "tall",
+                              "stand", "stand", "stand", "stand", "stand", "stand"):
+                    infer.return_value = label, 1.0
+                    np.testing.assert_array_equal(part.run(rgb), rgb)
+                    self.assertFalse(part.last_changed_mask.any())
+
+    def test_missing_frames_never_render_ghost_and_timeout_clears_lock(self):
+        for color in ("red", "green"):
+            with self.subTest(color=color), \
+                    patch.object(processor, "infer_exported", return_value=("tall", 1.0)) as infer:
+                part = processor.PillarColorProcessor()
+                rgb = pillar(color)
+                for _ in range(5):
+                    out = part.run(rgb)
+                self.assert_swapped(rgb, out, color)
+                old_id = part.last_detections[0]["metrics"]["track_id"]
+                blank = np.full((240, 320, 3), 220, np.uint8)
+                for _ in range(part.rules.max_missed_frames + 1):
+                    np.testing.assert_array_equal(part.run(blank), blank)
+                    self.assertFalse(part.last_changed_mask.any())
+                    self.assertEqual(part.last_detections, [])
+                self.assertFalse(part.tracker[color].tracks)
+                infer.return_value = "stand", 1.0
+                for _ in range(5):
+                    np.testing.assert_array_equal(part.run(rgb), rgb)
+                self.assertNotEqual(part.last_detections[0]["metrics"]["track_id"], old_id)
+
+    def test_neighboring_same_color_standard_does_not_inherit_locked_swap(self):
+        for color in ("red", "green"):
+            with self.subTest(color=color), \
+                    patch.object(processor, "infer_exported", return_value=("tall", 1.0)) as infer:
+                part = processor.PillarColorProcessor()
+                rgb = pillar(color, (90, 60, 35, 130))
+                for _ in range(5):
+                    out = part.run(rgb)
+                self.assert_swapped(rgb, out, color)
+                old_id = part.last_detections[0]["metrics"]["track_id"]
+                rgb = pillar(color, (90, 60, 35, 130))
+                source = (180, 10, 15) if color == "red" else (12, 100, 30)
+                rgb[70:180, 155:185] = source
+                infer.side_effect = lambda model, metrics: (
+                    ("tall" if metrics["bbox_xywh"][0] < 130 else "stand"), 1.0)
+                out = part.run(rgb)
+                targets = sorted(part.last_detections, key=lambda d: d["metrics"]["bbox_xywh"][0])
+                self.assertEqual(len(targets), 2)
+                self.assertEqual(targets[0]["metrics"]["track_id"], old_id)
+                self.assertNotEqual(targets[1]["metrics"]["track_id"], old_id)
+                self.assertFalse(np.array_equal(out[60:190, 90:125], rgb[60:190, 90:125]))
+                np.testing.assert_array_equal(out[70:180, 155:185], rgb[70:180, 155:185])
+
+    def test_locked_swap_survives_two_and_one_pixel_exit_fragments(self):
+        for color in ("red", "green"):
+            for edge in ("left", "right"):
+                with self.subTest(color=color, edge=edge), \
+                        patch.object(processor, "infer_exported", return_value=("tall", 1.0)):
+                    part = processor.PillarColorProcessor()
+                    first = (50, 70, 40, 100) if edge == "left" else (230, 70, 40, 100)
+                    rgb = pillar(color, first)
+                    for _ in range(5):
+                        part.run(rgb)
+                    track_id = part.last_detections[0]["metrics"]["track_id"]
+                    for x in (35, 20, 5, -10, -25, -35, -38, -39):
+                        box = (x, 70, 40, 100)
+                        if edge == "right":
+                            box = (320 - x - 40, 70, 40, 100)
+                        rgb = pillar(color, box)
+                        out = part.run(rgb)
+                        self.assertEqual(len(part.last_detections), 1)
+                        self.assertEqual(part.last_detections[0]["metrics"]["track_id"], track_id)
+                        self.assert_swapped(rgb, out, color)
+                    blank = np.full((240, 320, 3), 220, np.uint8)
+                    np.testing.assert_array_equal(part.run(blank), blank)
+                    self.assertFalse(part.last_changed_mask.any())
+
+    def test_jagged_edge_fills_small_gaps_without_crossing_large_blank_gap(self):
+        for color in ("red", "green"):
+            for edge in ("left", "right"):
+                with self.subTest(color=color, edge=edge), \
+                        patch.object(processor, "infer_exported", return_value=("tall", 1.0)):
+                    rgb = np.full((240, 320, 3), 220, np.uint8)
+                    source = (180, 10, 15) if color == "red" else (12, 100, 30)
+                    for y in range(40, 200):
+                        start = y % 4  # Small border gaps of zero through three pixels.
+                        if 105 <= y < 115:
+                            start = 12  # This larger blank region must remain background.
+                        rgb[y, start:80] = source
+                    if edge == "right":
+                        rgb = rgb[:, ::-1].copy()
+                    rules = processor.Rules(confirm_frames=1, straight_edges=False)
+                    part = processor.PillarColorProcessor(rules=rules)
+                    for x in (70, 50, 30, 10):
+                        approaching = pillar(color, (x, 40, 80, 160))
+                        if edge == "right":
+                            approaching = approaching[:, ::-1].copy()
+                        part.run(approaching)
+                    out = part.run(rgb)
+                    boundary = 0 if edge == "left" else 319
+                    target = out[60:95, boundary]
+                    self.assertTrue(np.all(target[:, 1] > target[:, 0]) if color == "red"
+                                    else np.all(target[:, 0] > target[:, 1]))
+                    if edge == "left":
+                        np.testing.assert_array_equal(out[108:112, :8], rgb[108:112, :8])
+                    else:
+                        np.testing.assert_array_equal(out[108:112, -8:], rgb[108:112, -8:])
+                    np.testing.assert_array_equal(out[:35], rgb[:35])
+                    np.testing.assert_array_equal(out[205:], rgb[205:])
+
+    def test_edge_fill_does_not_paint_an_opposite_color_standard(self):
+        rgb = pillar("red", (0, 40, 80, 160))
+        rgb[80:120, :2] = (12, 100, 30)
+
+        def classify(model, metrics):
+            return ("tall" if metrics["source_color"] == "red" else "stand"), 1.0
+
+        with patch.object(processor, "infer_exported", side_effect=classify):
+            part = processor.PillarColorProcessor(rules=processor.Rules(
+                confirm_frames=1, straight_edges=False))
+            for x in (70, 50, 30, 10):
+                part.run(pillar("red", (x, 40, 80, 160)))
+            out = part.run(rgb)
+            np.testing.assert_array_equal(out[80:120, :2], rgb[80:120, :2])
 
 
 class RecordingGraphChecks(unittest.TestCase):
@@ -297,7 +525,8 @@ class RecordingGraphChecks(unittest.TestCase):
 
     def test_enabled_converts_native_frame_before_resize_and_tub(self):
         with recorder_environment() as recorder, \
-                patch.object(processor, "infer_exported", return_value=("tall", 1.0)):
+                patch.object(processor, "infer_exported", return_value=("tall", 1.0)), \
+                patch.object(recorder, "_create_color_processor", side_effect=immediate_processor):
             car = recorder.build_vehicle_recording(show_window=False, enable_color_swap=True)
             convert = graph_entry(car, output="cam/color_swapped")
             resize = graph_entry(car, output="cam/image_array")
@@ -308,7 +537,7 @@ class RecordingGraphChecks(unittest.TestCase):
             self.assertEqual(resize["inputs"], ["cam/color_swapped"])
             self.assertLess(car.parts.index(convert), car.parts.index(resize))
             self.assertLess(car.parts.index(resize), car.parts.index(tub_entry))
-            expected_processor = processor.PillarColorProcessor()
+            expected_processor = immediate_processor()
             raw = FakeCamera.frame.copy()
             expected = cv2.resize(expected_processor.run(raw), (160, 120))
             car.run_one()
