@@ -18,7 +18,7 @@ Command-line options remain available for optional overrides.
 
 # IDE 设置：修改此变量、保存，然后直接点击“运行”，不需要填写运行参数。
 # True = 启用红绿替换；False = 关闭替换，按原来的图像流程录制。
-ENABLE_COLOR_SWAP = False
+ENABLE_COLOR_SWAP = True
 
 # ---------------------------------------------------------------------------
 # Standard library
