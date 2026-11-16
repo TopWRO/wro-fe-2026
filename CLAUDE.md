@@ -29,7 +29,8 @@
 - 新入口：`recording_color_swap/recording_n03_color_swap.py`，基于 `Recording_N02.py`，原文件保留。
 - 新处理器：`recording_color_swap/pillar_color_processor.py`，基于 `Temp_test_01/bidirectional_area_model/green_red_live_area_model_320x240.py`，内嵌原模型和调色板；`PillarColorProcessor.run(rgb)` 可独立调用，不打开硬件。
 - 图像流：RGB **320×240** → 可选红绿替换 → 缩放 **160×120** → 与原 PS4 angle/throttle/mode 一起写 Tub。原油门录制阈值及电机控制参数保持原行为。
-- 启动前设置 `ENABLE_COLOR_SWAP`（默认 `False`），或用 `--color-swap` / `--no-color-swap`；外部 `build_vehicle_recording(enable_color_swap=True/False)` 可覆盖默认值。仅非标准高度且分类可靠的柱子换色；标准/不确定目标保留原色。
+- 启动前设置 `ENABLE_COLOR_SWAP`，或用 `--color-swap` / `--no-color-swap`；外部 `build_vehicle_recording(enable_color_swap=True/False)` 可覆盖默认值。仅非标准高度且分类可靠的柱子换色；标准/不确定目标保留原色。
+- 贴边稳定性：`pillar_color_processor.py` 的 `SWAP_CONFIRM_FRAMES = 5` 控制完整可靠视野的连续确认；确认后锁定同一目标的换色直到离场/超过6帧未匹配。贴边变窄和后续高度分类抖动不会撤销锁定；无当前目标时不渲染历史轮廓。已确认目标可补齐最多4像素的触边浅锯齿，保护大空白及相反颜色；仅边缘首次出现的未确认目标保留原色。几何追踪的实景遮挡/同位置目标替换仍需实测。
 - IDE 使用：打开新录制入口，修改顶部 `ENABLE_COLOR_SWAP = True/False` 并保存，直接点运行即可，无参数启动默认手动录制；解释器使用现有 `/home/pi/env/bin/python`。
 - 默认数据目录仍为项目根目录的 `data`；可用 `--data-path` 指定独立目录。`--driving` 保留原图路径。
 - 测试：`python -B -m unittest discover -s recording_color_swap/tests -v`，摄像头、PS4、电机及 Tub 均模拟。实际录制入口仍属于需先确认后才能运行的电机程序。
